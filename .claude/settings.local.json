@@ -12,7 +12,9 @@
       "WebFetch(domain:wiki.lilygo.cc)",
       "WebFetch(domain:docs.espressif.com)",
       "WebFetch(domain:en.lilygo.cc)",
-      "WebFetch(domain:www.semtech.com)"
+      "WebFetch(domain:www.semtech.com)",
+      "Bash(uv sync:*)",
+      "Bash(uv run pytest:*)"
     ]
   }
 }
