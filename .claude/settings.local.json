@@ -8,7 +8,11 @@
       "mcp__plugin_context7_context7__query-docs",
       "Bash(flutter pub get:*)",
       "Bash(flutter analyze:*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:wiki.lilygo.cc)",
+      "WebFetch(domain:docs.espressif.com)",
+      "WebFetch(domain:en.lilygo.cc)",
+      "WebFetch(domain:www.semtech.com)"
     ]
   }
 }

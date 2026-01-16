@@ -34,6 +34,13 @@ const uint32_t BATTERY_UPDATE_INTERVAL_MS = 30000;  // Update battery every 30 s
 const uint32_t DISPLAY_REFRESH_INTERVAL_SECONDS = 10;  // Refresh countdown every N seconds
 
 // -----------------------------------------------------------------------------
+// Sleep Settings
+// -----------------------------------------------------------------------------
+
+// Enable/disable light sleep feature (power button toggles sleep/wake)
+const bool ENABLE_LIGHT_SLEEP = true;
+
+// -----------------------------------------------------------------------------
 // Bluetooth / GPS Settings (Phase 2)
 // -----------------------------------------------------------------------------
 
@@ -90,6 +97,7 @@ enum LoRaWanState {
     LORAWAN_JOINED,     // Successfully joined, configuring
     LORAWAN_UPLINK,     // Sending uplinks
     LORAWAN_DOWNLINK,   // Processing downlink (handled within uplink)
+    LORAWAN_SLEEPING,   // Light sleep mode (button-triggered)
     LORAWAN_ERROR       // Error state
 };
 
@@ -188,6 +196,7 @@ const char* stateToString(LoRaWanState state) {
         case LORAWAN_JOINED:   return "JOINED";
         case LORAWAN_UPLINK:   return "UPLINK";
         case LORAWAN_DOWNLINK: return "DOWNLINK";
+        case LORAWAN_SLEEPING: return "SLEEPING";
         case LORAWAN_ERROR:    return "ERROR";
         default:               return "UNKNOWN";
     }

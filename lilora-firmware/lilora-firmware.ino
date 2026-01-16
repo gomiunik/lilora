@@ -56,6 +56,9 @@ uint32_t lastButtonCheck = 0;
 // Manual uplink trigger
 volatile bool manualUplinkRequested = false;
 
+// Sleep mode trigger (set by power button callback)
+volatile bool sleepRequested = false;
+
 // UI elements
 lv_obj_t *statusLabel;
 lv_obj_t *metricsLabel;
@@ -367,20 +370,84 @@ void clearSession() {
 }
 
 // =============================================================================
+// Light Sleep Functions
+// =============================================================================
+
+void enterLightSleep() {
+    Serial.println(F("[Sleep] Entering light sleep..."));
+
+    // Save current state to restore after wake
+    LoRaWanState previousState = currentState;
+    currentState = LORAWAN_SLEEPING;
+
+    // Show sleep message on display
+    updateDisplay("SLEEPING", "Press button to wake");
+    lv_timer_handler();
+    delay(500);  // Give time to see the message
+
+    // Dim display smoothly
+    instance.decrementBrightness(0);
+    delay(100);
+
+    // Stop BLE advertising before sleep
+    if (ENABLE_BLE_GPS) {
+        Serial.println(F("[Sleep] Stopping BLE advertising..."));
+        BLEDevice::stopAdvertising();
+    }
+
+    // Enter light sleep - this blocks until wake-up
+    // LilyGoLib handles: radio sleep, display sleep, PMU wake config
+    Serial.println(F("[Sleep] Calling lightSleep()..."));
+    instance.lightSleep(WAKEUP_SRC_POWER_KEY);
+
+    // === CODE CONTINUES HERE AFTER WAKE-UP ===
+    Serial.println(F("[Sleep] Woke up from light sleep!"));
+
+    // Restore display brightness with smooth animation
+    instance.incrementalBrightness(DEVICE_MAX_BRIGHTNESS_LEVEL);
+
+    // Restart BLE advertising
+    if (ENABLE_BLE_GPS) {
+        Serial.println(F("[Sleep] Restarting BLE advertising..."));
+        BLEDevice::startAdvertising();
+    }
+
+    // Mark GPS data as stale (may be outdated after sleep)
+    gpsData.valid = false;
+
+    // Restore previous state
+    currentState = previousState;
+
+    // Update display
+    updateDisplay("ACTIVE", "Woke from sleep");
+    updateDisplayMetrics();
+    if (SHOW_BLE_STATUS) {
+        updateBleGpsStatus();
+    }
+    updateBatteryIndicator();
+
+    Serial.println(F("[Sleep] Sleep/wake cycle complete"));
+}
+
+// =============================================================================
 // Physical Button Handling
 // =============================================================================
 
 void checkPhysicalButton() {
-    // Debounce - check every 100ms
-    if (millis() - lastButtonCheck < 100) {
-        return;
-    }
-    lastButtonCheck = millis();
+    // Process PMU events (power button is managed by AXP2101 PMU)
+    instance.loop();
 
-    // Note: Touch screen button is handled by LVGL automatically
-    // Physical crown/side button handling can be added here if needed
-    // For T-Watch S3, the crown button may require specific GPIO reading
-    // depending on hardware variant
+    // Check if sleep was requested via power button
+    if (sleepRequested && ENABLE_LIGHT_SLEEP) {
+        sleepRequested = false;
+
+        // Only allow sleep when in normal operation states
+        if (currentState == LORAWAN_UPLINK || currentState == LORAWAN_JOINED) {
+            enterLightSleep();
+        } else {
+            Serial.println(F("[Sleep] Cannot enter sleep in current state"));
+        }
+    }
 }
 
 // =============================================================================
@@ -755,6 +822,20 @@ void setup() {
     // Open NVS storage
     store.begin("lilora");
 
+    // Register power button event handler for sleep/wake
+    if (ENABLE_LIGHT_SLEEP) {
+        Serial.println(F("[Setup] Registering power button handler for sleep..."));
+        instance.onEvent([](DeviceEvent_t event, void *params, void *user_data) {
+            if (event == POWER_EVENT) {
+                PMUEventType_t pmuEvent = instance.getPMUEventType(params);
+                if (pmuEvent == PMU_EVENT_KEY_CLICKED) {
+                    Serial.println(F("[Button] Power button clicked - sleep requested"));
+                    sleepRequested = true;
+                }
+            }
+        }, POWER_EVENT, NULL);
+    }
+
     // Try to restore previous session
     if (restoreSession()) {
         Serial.println(F("[Setup] Session restored - skipping join"));
@@ -805,6 +886,12 @@ void loop() {
 
         case LORAWAN_DOWNLINK:
             // Downlink is handled within sendUplink()
+            currentState = LORAWAN_UPLINK;
+            break;
+
+        case LORAWAN_SLEEPING:
+            // Should not reach here - enterLightSleep() blocks until wake
+            // If we somehow get here, restore to UPLINK state
             currentState = LORAWAN_UPLINK;
             break;
 
