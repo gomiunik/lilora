@@ -1,5 +1,5 @@
 /*
- * LiLoRa Firmware - Phase 1: LoRaWAN Foundation
+ * LiLoRa Firmware - Phase 2: Bluetooth GPS Integration
  *
  * LoRaWAN range tracking firmware for LilyGo T-Watch S3
  *
@@ -11,6 +11,8 @@
  * - Display status on watch screen
  * - Dark mode support (configurable)
  * - Manual uplink via on-screen button or physical button
+ * - BLE GPS receiver (receives NMEA sentences from mobile app)
+ * - GPS payload encoding for LoRaWAN uplinks
  *
  * Hardware: LilyGo T-Watch S3 with SX1262 LoRa (868MHz)
  *
@@ -19,6 +21,7 @@
  * 2. Fill in your OTAA keys from ChirpStack/TTN
  * 3. Configure region in config.h if not EU868
  * 4. Upload via Arduino IDE with LilyGoLib installed
+ * 5. Install LiLoRa mobile app and pair via Bluetooth
  *
  * Network Server Requirements:
  * - LoRaWAN MAC version: 1.1.0
@@ -28,6 +31,11 @@
 
 #include "config.h"
 #include <Preferences.h>
+
+// Phase 2: BLE GPS modules
+#include "bluetooth.h"
+#include "nmea_parser.h"
+#include "payload_encoder.h"
 
 // =============================================================================
 // Global Variables
@@ -53,6 +61,8 @@ lv_obj_t *statusLabel;
 lv_obj_t *metricsLabel;
 lv_obj_t *sendButton;
 lv_obj_t *countdownLabel;
+lv_obj_t *bleGpsLabel;  // Phase 2: BLE/GPS status
+lv_obj_t *batteryLabel; // Battery percentage indicator
 
 // Statistics
 uint32_t uplinkCount = 0;
@@ -97,26 +107,44 @@ void initDisplay() {
     // Apply theme colors
     applyTheme();
 
+    // Create battery label (top-right corner)
+    if (SHOW_BATTERY_INDICATOR) {
+        batteryLabel = lv_label_create(lv_scr_act());
+        lv_obj_set_style_text_font(batteryLabel, &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_color(batteryLabel, colorAccent, 0);
+        lv_obj_align(batteryLabel, LV_ALIGN_TOP_RIGHT, -10, 6);
+        lv_label_set_text(batteryLabel, "---%");
+    }
+
     // Create status label (top)
     statusLabel = lv_label_create(lv_scr_act());
     lv_obj_set_style_text_font(statusLabel, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(statusLabel, colorText, 0);
-    lv_obj_align(statusLabel, LV_ALIGN_TOP_MID, 0, 10);
+    lv_obj_align(statusLabel, LV_ALIGN_TOP_MID, 0, 5);
     lv_label_set_text(statusLabel, "LiLoRa Starting...");
 
     // Create metrics label (center-top)
     metricsLabel = lv_label_create(lv_scr_act());
     lv_obj_set_style_text_font(metricsLabel, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(metricsLabel, colorText, 0);
-    lv_obj_align(metricsLabel, LV_ALIGN_CENTER, 0, -30);
+    lv_obj_align(metricsLabel, LV_ALIGN_CENTER, 0, -45);
     lv_label_set_text(metricsLabel, "Initializing...");
 
     // Create countdown label (below metrics)
     countdownLabel = lv_label_create(lv_scr_act());
     lv_obj_set_style_text_font(countdownLabel, &lv_font_montserrat_12, 0);
     lv_obj_set_style_text_color(countdownLabel, colorAccent, 0);
-    lv_obj_align(countdownLabel, LV_ALIGN_CENTER, 0, 30);
+    lv_obj_align(countdownLabel, LV_ALIGN_CENTER, 0, 0);
     lv_label_set_text(countdownLabel, "");
+
+    // Create BLE/GPS status label (Phase 2)
+    if (SHOW_BLE_STATUS) {
+        bleGpsLabel = lv_label_create(lv_scr_act());
+        lv_obj_set_style_text_font(bleGpsLabel, &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_color(bleGpsLabel, colorText, 0);
+        lv_obj_align(bleGpsLabel, LV_ALIGN_CENTER, 0, 25);
+        lv_label_set_text(bleGpsLabel, "BLE: -- | GPS: --");
+    }
 
     // Create send button (bottom)
     sendButton = lv_btn_create(lv_scr_act());
@@ -156,8 +184,24 @@ void updateDisplay(const char* status, const char* metrics) {
 }
 
 void updateCountdown(uint32_t secondsRemaining) {
+    // Only update display at configured interval to save power
+    static uint32_t lastDisplayedSeconds = 0xFFFFFFFF;
+
+    // Calculate which "bucket" we're in based on refresh interval
+    uint32_t displayBucket = secondsRemaining / DISPLAY_REFRESH_INTERVAL_SECONDS;
+    uint32_t displaySeconds = displayBucket * DISPLAY_REFRESH_INTERVAL_SECONDS;
+
+    // Also update when crossing into single digits for better UX
+    if (secondsRemaining < DISPLAY_REFRESH_INTERVAL_SECONDS) {
+        displaySeconds = secondsRemaining;
+    }
+
+    // Skip update if same displayed value (saves power by avoiding LCD writes)
+    if (displaySeconds == lastDisplayedSeconds) return;
+    lastDisplayedSeconds = displaySeconds;
+
     char countdownText[32];
-    snprintf(countdownText, sizeof(countdownText), "Next TX: %lu s", secondsRemaining);
+    snprintf(countdownText, sizeof(countdownText), "Next TX: %lu s", displaySeconds);
     lv_label_set_text(countdownLabel, countdownText);
 }
 
@@ -168,6 +212,82 @@ void updateDisplayMetrics() {
         "RSSI: %d dBm  SNR: %.1f dB",
         uplinkCount, downlinkCount, lastRSSI, lastSNR);
     lv_label_set_text(metricsLabel, metricsText);
+}
+
+// Update BLE/GPS status on display (Phase 2)
+void updateBleGpsStatus() {
+    if (!SHOW_BLE_STATUS || bleGpsLabel == nullptr) return;
+
+    char statusText[64];
+    const char* bleStatus = isBleConnected() ? "Connected" : "Waiting";
+    String gpsStatus = getGpsStatusString();
+
+    snprintf(statusText, sizeof(statusText), "BLE: %s | GPS: %s",
+             bleStatus, gpsStatus.c_str());
+    lv_label_set_text(bleGpsLabel, statusText);
+}
+
+// Update battery indicator
+void updateBatteryIndicator() {
+    if (!SHOW_BATTERY_INDICATOR || batteryLabel == nullptr) return;
+
+    static uint32_t lastBatteryUpdate = 0;
+    if (millis() - lastBatteryUpdate < BATTERY_UPDATE_INTERVAL_MS) return;
+    lastBatteryUpdate = millis();
+
+    char batteryText[16];
+    int batteryPercent = instance.pmu.getBatteryPercent();
+    bool isCharging = instance.pmu.isCharging();
+    bool isUsbConnected = instance.pmu.isVbusIn();
+
+    if (batteryPercent < 0) {
+        // Battery not connected or error reading
+        snprintf(batteryText, sizeof(batteryText), "---%%");
+    } else if (isCharging) {
+        snprintf(batteryText, sizeof(batteryText), "%d%%+", batteryPercent);
+    } else if (isUsbConnected) {
+        snprintf(batteryText, sizeof(batteryText), "%d%%*", batteryPercent);
+    } else {
+        snprintf(batteryText, sizeof(batteryText), "%d%%", batteryPercent);
+    }
+
+    lv_label_set_text(batteryLabel, batteryText);
+
+    // Log battery status periodically
+    Serial.print(F("[Battery] "));
+    Serial.print(batteryPercent);
+    Serial.print(F("% | Voltage: "));
+    Serial.print(instance.pmu.getBattVoltage());
+    Serial.print(F("mV | Charging: "));
+    Serial.println(isCharging ? "Yes" : "No");
+}
+
+// Process incoming BLE NMEA data (Phase 2)
+void processBleData() {
+    if (!ENABLE_BLE_GPS) return;
+
+    // Handle BLE connection state changes
+    updateBluetooth();
+
+    // Process any complete NMEA sentences in the buffer
+    String sentence;
+    int sentencesProcessed = 0;
+    const int maxSentencesPerLoop = 5;  // Limit to avoid blocking
+
+    while (sentencesProcessed < maxSentencesPerLoop) {
+        sentence = readNmeaSentence();
+        if (sentence.length() == 0) break;
+
+        processNmeaSentence(sentence);
+        sentencesProcessed++;
+    }
+
+    // Update display periodically
+    static uint32_t lastStatusUpdate = 0;
+    if (millis() - lastStatusUpdate > 1000) {
+        updateBleGpsStatus();
+        lastStatusUpdate = millis();
+    }
 }
 
 // =============================================================================
@@ -403,22 +523,24 @@ void doSendUplink() {
     updateDisplay("SENDING", "Transmitting...");
     enableSendButton(false);
 
-    // Set battery level for network server
-    uint8_t battLevel = 146;  // ~57% battery
+    // Set battery level for network server (actual reading from PMU)
+    // LoRaWAN battery level: 0=external power, 1-254=battery level, 255=unable to measure
+    int batteryPercent = instance.pmu.getBatteryPercent();
+    uint8_t battLevel;
+    if (batteryPercent < 0) {
+        battLevel = 255;  // Unable to measure
+    } else if (instance.pmu.isVbusIn() && !instance.pmu.isCharging()) {
+        battLevel = 0;    // External power (USB connected, not charging = full)
+    } else {
+        // Map 0-100% to 1-254 (LoRaWAN spec)
+        battLevel = (uint8_t)(1 + (batteryPercent * 253 / 100));
+    }
     node.setDeviceStatus(battLevel);
 
-    // Generate dummy payload (3 bytes: temp, humidity, battery %)
-    // In Phase 2, this will be replaced with GPS data
-    uint8_t value1 = radio.random(100);      // Simulated temperature (0-100)
-    uint16_t value2 = radio.random(2000);    // Simulated humidity*10 (0-200.0%)
-
-    uint8_t uplinkPayload[3];
-    uplinkPayload[0] = value1;
-    uplinkPayload[1] = highByte(value2);
-    uplinkPayload[2] = lowByte(value2);
-
-    Serial.print(F("[Uplink] Payload: "));
-    arrayDump(uplinkPayload, sizeof(uplinkPayload));
+    // Generate GPS payload (Phase 2)
+    // 13-byte binary format with lat, lon, alt, fix, hdop, sats
+    uint8_t uplinkPayload[GPS_PAYLOAD_SIZE];
+    bool hasValidGps = prepareGpsUplinkPayload(uplinkPayload);
 
     // Prepare for downlink
     uint8_t downlinkPayload[64];
@@ -593,8 +715,9 @@ void setup() {
 
     Serial.println(F(""));
     Serial.println(F("========================================"));
-    Serial.println(F("   LiLoRa Firmware v1.1 - Phase 1"));
+    Serial.println(F("   LiLoRa Firmware v2.0 - Phase 2"));
     Serial.println(F("   LoRaWAN Range Tracking System"));
+    Serial.println(F("   + Bluetooth GPS Integration"));
     Serial.println(F("========================================"));
     Serial.println(F(""));
     Serial.print(F("[Setup] Dark mode: "));
@@ -612,7 +735,15 @@ void setup() {
     // Set brightness to maximum
     instance.setBrightness(DEVICE_MAX_BRIGHTNESS_LEVEL);
 
-    updateDisplay("LiLoRa v1.1", "Initializing...");
+    updateDisplay("LiLoRa v2.0", "Initializing...");
+
+    // Initialize Bluetooth (Phase 2)
+    if (ENABLE_BLE_GPS) {
+        Serial.println(F("[Setup] Initializing Bluetooth GPS receiver..."));
+        initBluetooth();
+        Serial.print(F("[Setup] BLE device name: "));
+        Serial.println(getBleDeviceNameCached());
+    }
 
     // Initialize LoRaWAN
     Serial.println(F("[Setup] Initializing LoRaWAN..."));
@@ -644,6 +775,12 @@ void setup() {
 // =============================================================================
 
 void loop() {
+    // Process BLE GPS data (Phase 2)
+    processBleData();
+
+    // Update battery indicator
+    updateBatteryIndicator();
+
     switch (currentState) {
         case LORAWAN_IDLE:
             // Should not reach here after setup

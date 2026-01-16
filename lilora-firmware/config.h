@@ -25,6 +25,27 @@ const uint32_t COLOR_BG_LIGHT = 0xFFFFFF;      // White background
 const uint32_t COLOR_TEXT_LIGHT = 0x000000;    // Black text
 const uint32_t COLOR_ACCENT_LIGHT = 0x0066CC;  // Blue accent
 
+// Battery indicator settings
+const bool SHOW_BATTERY_INDICATOR = true;      // Show battery percentage on screen
+const uint32_t BATTERY_UPDATE_INTERVAL_MS = 30000;  // Update battery every 30 seconds
+
+// Screen refresh optimization (reduces power consumption)
+// Set to 1 for real-time countdown, higher values save battery
+const uint32_t DISPLAY_REFRESH_INTERVAL_SECONDS = 10;  // Refresh countdown every N seconds
+
+// -----------------------------------------------------------------------------
+// Bluetooth / GPS Settings (Phase 2)
+// -----------------------------------------------------------------------------
+
+// Enable/disable BLE GPS receiver
+const bool ENABLE_BLE_GPS = true;
+
+// BLE connection timeout - restart advertising if no connection after this time
+const uint32_t BLE_CONNECT_TIMEOUT_MS = 300000;  // 5 minutes
+
+// Show BLE/GPS status on display
+const bool SHOW_BLE_STATUS = true;
+
 // -----------------------------------------------------------------------------
 // LoRaWAN Settings
 // -----------------------------------------------------------------------------

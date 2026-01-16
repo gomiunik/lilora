@@ -4,7 +4,11 @@
       "mcp__plugin_context7_context7__resolve-library-id",
       "Bash(pio init:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "WebFetch(domain:api.github.com)"
     ]
   }
 }
