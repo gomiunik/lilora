@@ -75,7 +75,7 @@
   - Check if valid session exists in NVS
   - If yes, call `node.restore()` (placeholder - RadioLib version-dependent)
   - If no, proceed with OTAA join
-- [ ] Test session persistence: Upload firmware → join → power cycle → verify no rejoin (**BLOCKED: Upload issues**)
+- [x] Test session persistence: Upload firmware → join → power cycle → verify no rejoin
 
 #### 1.6 Uplink Transmission
 - [x] Implement `sendUplink()` function in `src/lorawan.cpp`:
@@ -93,17 +93,17 @@
   - Parse received payload and frame port
   - Log downlink data to serial monitor (hex payload, port, length)
 - [ ] (Optional) Implement command handling:
-  - Port 1: Configuration update (TX power, SF) - **Deferred to Phase 2**
-  - Port 2: LED pattern or display message - **Deferred to Phase 2**
-- [ ] Test downlink from network server console (**BLOCKED: Needs successful join first**)
+  - Port 1: Configuration update (TX power, SF) - **Deferred to Phase 5**
+  - Port 2: LED pattern or display message - **Deferred to Phase 5**
+- [x] Test downlink from network server console
 
 #### 1.8 Testing and Validation
-- [ ] **Join Test**: Verify successful OTAA join within 30 seconds (**PENDING: Upload and ChirpStack config**)
-- [ ] **Session Restore Test**: Power cycle device 5 times, confirm only 1 join (**PENDING**)
-- [ ] **Uplink Test**: Send 10 uplinks, verify all appear on network server (**PENDING**)
-- [ ] **Downlink Test**: Queue downlink from server, verify reception on device (**PENDING**)
-- [ ] **Duty Cycle Test**: Send rapid uplinks, verify RadioLib enforces fair use policy (**PENDING**)
-- [ ] **Range Test**: Walk 100m from gateway, confirm uplinks still succeed (**PENDING**)
+- [x] **Join Test**: Verify successful OTAA join within 30 seconds
+- [x] **Session Restore Test**: Power cycle device 5 times, confirm only 1 join
+- [x] **Uplink Test**: Send 10 uplinks, verify all appear on network server
+- [x] **Downlink Test**: Queue downlink from server, verify reception on device
+- [x] **Duty Cycle Test**: Send rapid uplinks, verify RadioLib enforces fair use policy
+- [x] **Range Test**: Walk 100m from gateway, confirm uplinks still succeed
 
 ### Deliverables
 - ✅ Working LoRaWAN firmware with OTAA join (code complete)
@@ -112,13 +112,13 @@
 - ✅ Downlink reception and logging (code complete)
 - ✅ Serial monitor debug output (code complete)
 - ✅ Build succeeds, upload succeeds
-- ⏸️ **Testing blocked by**: Upload issues and ChirpStack configuration (needs LoRaWAN 1.0.4)
+- ✅ All tests passing
 
 ### Success Criteria
-- [ ] Device joins network within 30 seconds (**PENDING: Awaiting upload fix**)
-- [ ] Session survives power cycle (no rejoin) (**PENDING**)
-- [ ] Uplink success rate >95% within 100m of gateway (**PENDING**)
-- [ ] Firmware runs for 1 hour without crash (**PENDING**)
+- [x] Device joins network within 30 seconds
+- [x] Session survives power cycle (no rejoin)
+- [x] Uplink success rate >95% within 100m of gateway
+- [x] Firmware runs for 1 hour without crash
 
 ### Implementation Notes & Lessons Learned
 
@@ -178,10 +178,11 @@
 
 **Objective**: Stream GPS coordinates from mobile phone to T-Watch via BLE
 
-**Status**: 🟢 **CODE COMPLETE - INTEGRATION TESTING PENDING**
-- All firmware BLE/NMEA/encoder code written
-- All mobile app code written and compiles successfully
-- **Next Steps**: Hardware integration testing with T-Watch and mobile device
+**Status**: 🟢 **COMPLETE - TESTED**
+- All firmware BLE/NMEA/encoder code written and working
+- All mobile app code written and tested
+- BLE connection and GPS forwarding verified
+- **Remaining**: GPS console validation and LoRaWAN GPS payload verification
 
 ### Tasks
 
@@ -273,7 +274,7 @@
   - Generate GGA sentence from `Position` object
   - Calculate checksum (XOR of all bytes between $ and *)
   - Format: `$GPGGA,hhmmss.ss,lat,N/S,lon,E/W,fix,sats,hdop,alt,M,...*checksum`
-- [ ] Test NMEA generation: Print to console and validate with online parser (**PENDING: Device testing**)
+- [ ] Test NMEA generation: Print to console and validate with online parser (**PENDING**)
 
 #### 2.7 Mobile App - Bluetooth Service
 - [x] Create `lib/services/bluetooth_service.dart`
@@ -303,11 +304,11 @@
 - [x] Implement error handling and user feedback (SnackBars)
 
 #### 2.9 Integration Testing
-- [ ] **BLE Connection Test**: Scan for T-Watch, verify device appears in list (**PENDING: Hardware**)
-- [ ] **NMEA Transmission Test**: Connect and send sentences, view firmware serial output (**PENDING**)
-- [ ] **GPS Parsing Test**: Mock GPS coordinates, verify firmware decodes correctly (**PENDING**)
+- [x] **BLE Connection Test**: Scan for T-Watch, verify device appears in list
+- [x] **NMEA Transmission Test**: Connect and send sentences, view firmware serial output
+- [x] **GPS Parsing Test**: Mock GPS coordinates, verify firmware decodes correctly
 - [ ] **LoRaWAN Uplink Test**: Check ChirpStack/TTN for GPS data in hex payload (**PENDING**)
-- [ ] **End-to-End Test**: Walk outdoors, verify GPS updates on network server (**PENDING**)
+- [x] **End-to-End Test**: Walk outdoors, verify GPS updates on network server
 
 ### Deliverables
 - ✅ Firmware with BLE NMEA server (`bluetooth.h`)
@@ -803,16 +804,16 @@
 
 ---
 
-**Document Version**: 2.1
+**Document Version**: 2.2
 **Last Updated**: January 2026
-**Status**: Phase 3 Code Complete - Deployment Pending
+**Status**: Phases 1-3 Complete - Ready for Phase 4
 
 ### Current Progress Summary
 
 | Phase | Status | Code | Testing |
 |-------|--------|------|---------|
-| Phase 1: Firmware Foundation | 🟡 Code Complete | ✅ Done | ⏸️ Blocked (upload issues) |
-| Phase 2: Bluetooth GPS | 🟢 Code Complete | ✅ Done | ⏸️ Pending hardware |
-| Phase 3: Backend Service | 🟢 Code Complete | ✅ Done | ✅ 19/19 tests pass |
+| Phase 1: Firmware Foundation | 🟢 Complete | ✅ Done | ✅ All tests pass |
+| Phase 2: Bluetooth GPS | 🟢 Complete | ✅ Done | ✅ Tested (GPS validation pending) |
+| Phase 3: Backend Service | 🟢 Complete | ✅ Done | ✅ 19/19 tests pass |
 | Phase 4: Mobile Visualization | ⬜ Not Started | - | - |
 | Phase 5: Enhancements | ⬜ Not Started | - | - |

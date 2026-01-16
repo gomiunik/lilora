@@ -141,22 +141,23 @@ lilora/                          # This repository (documentation & planning)
 
 ## Development Phases
 
-Development is structured in 5 phases (see [CLAUDE.md](CLAUDE.md) for details):
+Development is structured in 5 phases (see [PROJECT_PLAN.md](PROJECT_PLAN.md) for details):
 
 ### Phase 1: Firmware Foundation ✅
 - LoRaWAN OTAA join to ChirpStack/TTN
 - Session persistence (NVS storage)
-- Uplink/downlink with dummy payloads
+- Uplink/downlink tested and working
 
-### Phase 2: Bluetooth GPS Integration ⏳
-- BLE Serial Server on T-Watch
-- NMEA sentence generation in Flutter
-- GPS data encoding in LoRaWAN payload
+### Phase 2: Bluetooth GPS Integration ✅
+- BLE Serial Server on T-Watch (Nordic UART Service)
+- NMEA sentence generation in Flutter app
+- GPS data encoding in LoRaWAN payload (13-byte binary format)
 
-### Phase 3: Backend Service 🔜
-- FastAPI webhook receiver
-- WebSocket broadcast manager
-- Payload decoder
+### Phase 3: Backend Service ✅
+- FastAPI webhook receiver (ChirpStack & TTN)
+- WebSocket broadcast manager for real-time updates
+- Payload decoder with Haversine distance calculation
+- 19/19 tests passing
 
 ### Phase 4: Mobile Visualization 🔜
 - Map integration with range plotting
@@ -171,14 +172,14 @@ Development is structured in 5 phases (see [CLAUDE.md](CLAUDE.md) for details):
 ## Technology Stack
 
 | Component | Technology | Purpose |
-|-----------|-----------|---------|
+|-----------|------------|---------|
 | **Firmware** | PlatformIO + Arduino | ESP32-S3 development |
-| | RadioLib | LoRaWAN stack (SX1262) |
-| | LilyGoLib | Hardware abstraction |
+| | RadioLib 6.6.0 | LoRaWAN stack (SX1262) |
+| | ESP32 BLE | Bluetooth LE server |
 | **Mobile** | Flutter 3.x | Cross-platform UI |
-| | flutter_blue_plus | Bluetooth LE |
+| | flutter_blue_plus | Bluetooth LE client |
 | | geolocator | GPS access |
-| **Backend** | FastAPI | Async web framework |
+| **Backend** | FastAPI + uv | Async web framework |
 | | WebSockets | Real-time updates |
 | | Pydantic | Data validation |
 | **Network** | ChirpStack or TTN | LoRaWAN network server |
@@ -260,7 +261,8 @@ This project is released under MIT License. Individual components (LilyGoLib, Ra
 
 ---
 
-**Project Status**: Phase 1 (Planning) - Repository structure and documentation complete. Ready to begin firmware development.
+**Project Status**: Phases 1-3 Complete - Firmware, mobile BLE app, and backend service all working. Ready for Phase 4 (Mobile Visualization).
 
 **Maintainer**: Boris Gomiunik
 **Created**: January 2026
+**Last Updated**: January 2026
