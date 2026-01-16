@@ -1,0 +1,18 @@
+# LoRaWAN Credentials (contains sensitive keys)
+lorawan_credentials.h
+
+# Arduino IDE build artifacts
+build/
+*.bin
+*.elf
+*.hex
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
