@@ -50,9 +50,15 @@ Download from https://www.arduino.cc/en/software
 
 ### 3. Install LilyGoLib
 
-1. Go to **Sketch > Include Library > Manage Libraries**
-2. Search "LilyGoLib" and install it
-3. Or download from: https://github.com/Xinyuan-LilyGO/LilyGoLib
+1. [Download LilyGoLib Library](https://github.com/Xinyuan-LilyGO/LilyGoLib/archive/refs/heads/master.zip)
+2. Open `Arduino IDE` -> `Sketch` -> `Include Library` -> `Add .ZIP Library` -> `Select the library compressed package downloaded in step 3`
+3. [Install LilyGoLib-ThirdParty](https://github.com/Xinyuan-LilyGO/LilyGoLib-ThirdParty)
+    * Copy all directories in [LilyGoLib-ThirdParty](https://github.com/Xinyuan-LilyGO/LilyGoLib-ThirdParty) to ArduinoIDE libraries directory, if there is no `libraries` directory, please create it.
+    * Please note that instead of copying the `LilyGoLib-ThirdParty` directory, copy the folders in the `LilyGoLib-ThirdParty` directory to libraries
+    * How to find the location of your own libraries on your computer, [please see here](https://support.arduino.cc/hc/en-us/articles/4415103213714-Find-sketches-libraries-board-cores-and-other-files-on-your-computer)
+        * Windows: `C:\Users\{username}\Documents\Arduino`
+        * macOS: `/Users/{username}/Documents/Arduino`
+        * Linux: `/home/{username}/Arduino`
 
 ### 4. Configure Credentials
 

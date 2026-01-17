@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/range_point.dart';
+import '../services/gps_service.dart';
 import '../services/websocket_service.dart';
 import '../services/session_service.dart';
 import '../utils/geo_utils.dart';
@@ -29,8 +30,9 @@ class _MapScreenState extends State<MapScreen> {
   bool _showPath = true;
   double _currentZoom = 15.0;
 
-  // Default center (Ljubljana, Slovenia)
-  final LatLng _currentCenter = const LatLng(46.0569, 14.5058);
+  // Current center - will be updated with phone's GPS position
+  LatLng _currentCenter = const LatLng(46.0569, 14.5058);
+  bool _initialPositionSet = false;
 
   @override
   void initState() {
@@ -43,10 +45,23 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _initializeServices() async {
     final sessionService = context.read<SessionService>();
     final wsService = context.read<WebSocketService>();
+    final gpsService = context.read<GpsService>();
 
     // Initialize session service
     if (!sessionService.isInitialized) {
       await sessionService.initialize();
+    }
+
+    // Center map on phone's current GPS position
+    if (!_initialPositionSet) {
+      final position = await gpsService.getCurrentPosition();
+      if (position != null && mounted) {
+        setState(() {
+          _currentCenter = LatLng(position.latitude, position.longitude);
+          _initialPositionSet = true;
+        });
+        _mapController.move(_currentCenter, _currentZoom);
+      }
     }
 
     // Subscribe to range point stream
