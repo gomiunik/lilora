@@ -14,7 +14,8 @@
       "WebFetch(domain:en.lilygo.cc)",
       "WebFetch(domain:www.semtech.com)",
       "Bash(uv sync:*)",
-      "Bash(uv run pytest:*)"
+      "Bash(uv run pytest:*)",
+      "Bash(flutter pub run:*)"
     ]
   }
 }

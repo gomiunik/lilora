@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'models/range_point.dart';
+import 'models/session.dart';
 import 'services/permission_service.dart';
 import 'services/gps_service.dart';
 import 'services/bluetooth_service.dart';
-import 'screens/home_screen.dart';
+import 'services/websocket_service.dart';
+import 'services/session_service.dart';
+import 'widgets/nav_shell.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive for local storage
+  await Hive.initFlutter();
+
+  // Register Hive adapters
+  Hive.registerAdapter(RangePointAdapter());
+  Hive.registerAdapter(SessionAdapter());
+
   runApp(const LiLoRaApp());
 }
 
@@ -20,6 +33,8 @@ class LiLoRaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PermissionService()),
         ChangeNotifierProvider(create: (_) => GpsService()),
         ChangeNotifierProvider(create: (_) => BluetoothService()),
+        ChangeNotifierProvider(create: (_) => WebSocketService()),
+        ChangeNotifierProvider(create: (_) => SessionService()),
       ],
       child: MaterialApp(
         title: 'LiLoRa GPS',
@@ -28,7 +43,14 @@ class LiLoRaApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        home: const HomeScreen(),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        home: const NavShell(),
       ),
     );
   }
