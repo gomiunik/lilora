@@ -555,9 +555,12 @@ void configureNode() {
     node.setDatarate(5);
     Serial.println(F("[Config] Initial DR: 5"));
 
-    // Enable duty cycle compliance
-    node.setDutyCycle(true, 1250);
-    Serial.println(F("[Config] Duty cycle enabled"));
+    // Disable firmware-side duty cycle tracking
+    // The network server (ChirpStack/TTN) already enforces duty cycle limits
+    // Firmware-side tracking causes issues after session restore because
+    // RadioLib doesn't restore the duty cycle timer state from NVS
+    node.setDutyCycle(false);
+    Serial.println(F("[Config] Duty cycle tracking disabled (enforced by network server)"));
 
     // Enable dwell time limits (400ms for some regions)
     node.setDwellTime(true, 400);
@@ -572,14 +575,9 @@ void configureNode() {
 // =============================================================================
 
 bool canSendUplink() {
-    // Check duty cycle
-    uint32_t timeUntilUplink = node.timeUntilUplink();
-    if (timeUntilUplink > 0) {
-        Serial.print(F("[Uplink] Must wait "));
-        Serial.print(timeUntilUplink);
-        Serial.println(F(" ms for duty cycle"));
-        return false;
-    }
+    // With firmware duty cycle disabled, always allow uplinks
+    // Network server will enforce actual duty cycle limits
+    // and reject/throttle if needed
     return true;
 }
 
@@ -667,10 +665,8 @@ void doSendUplink() {
     lastSNR = radio.getSNR();
     updateDisplayMetrics();
 
-    // Calculate next uplink time (respecting duty cycle)
-    uint32_t minDelay = UPLINK_INTERVAL_SECONDS * 1000;
-    uint32_t dutyCycleDelay = node.timeUntilUplink();
-    uint32_t delayMs = max(dutyCycleDelay, minDelay);
+    // Calculate next uplink time based on configured interval
+    uint32_t delayMs = UPLINK_INTERVAL_SECONDS * 1000;
 
     nextUplinkTime = millis() + delayMs;
 

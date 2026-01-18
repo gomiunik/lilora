@@ -86,27 +86,41 @@ class MetricsPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Total points
-                Row(
-                  children: [
-                    const Icon(Icons.pin_drop, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$totalPoints points',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.pin_drop, size: 16),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '$totalPoints points',
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 // Max distance
-                Row(
-                  children: [
-                    const Icon(Icons.trending_up, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Max: ${formatDistance(maxDistance)}',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.trending_up, size: 16),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Max: ${formatDistance(maxDistance)}',
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 // Record button
                 FilledButton.tonalIcon(
                   onPressed: onRecordTap,

@@ -134,25 +134,32 @@ class RangePoint extends HiveObject {
 
   /// Convert to GeoJSON Feature for export
   Map<String, dynamic> toGeoJsonFeature() {
+    final properties = {
+      'timestamp': timestamp.toIso8601String(),
+      'device_eui': deviceEui,
+      'frame_count': frameCount,
+      'rssi': rssi,
+      'snr': snr,
+      'spreading_factor': spreadingFactor,
+      'frequency': frequency,
+      'distance': distance,
+      'fix_quality': fixQuality,
+      'hdop': hdop,
+      'satellites': satellites,
+    };
+
+    // Include gateway info if available
+    if (gatewayId != null) properties['gateway_id'] = gatewayId;
+    if (gatewayLat != null) properties['gateway_lat'] = gatewayLat;
+    if (gatewayLon != null) properties['gateway_lon'] = gatewayLon;
+
     return {
       'type': 'Feature',
       'geometry': {
         'type': 'Point',
         'coordinates': [longitude, latitude, altitude],
       },
-      'properties': {
-        'timestamp': timestamp.toIso8601String(),
-        'device_eui': deviceEui,
-        'frame_count': frameCount,
-        'rssi': rssi,
-        'snr': snr,
-        'spreading_factor': spreadingFactor,
-        'frequency': frequency,
-        'distance': distance,
-        'fix_quality': fixQuality,
-        'hdop': hdop,
-        'satellites': satellites,
-      },
+      'properties': properties,
     };
   }
 

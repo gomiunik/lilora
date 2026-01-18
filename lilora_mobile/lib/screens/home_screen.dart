@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/permission_service.dart';
 import '../services/gps_service.dart';
 import '../services/bluetooth_service.dart';
@@ -15,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isForwarding = false;
   Timer? _forwardTimer;
+  bool _wasConnected = false;
 
   @override
   void initState() {
@@ -23,12 +25,51 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PermissionService>().checkPermissions();
       context.read<BluetoothService>().initialize();
+
+      // Listen for BLE connection changes to auto-enable GPS forwarding
+      context.read<BluetoothService>().addListener(_onBluetoothStateChanged);
     });
+  }
+
+  void _onBluetoothStateChanged() {
+    final bleService = context.read<BluetoothService>();
+    final isConnected = bleService.isConnected;
+
+    // Auto-enable GPS forwarding when BLE connects
+    if (isConnected && !_wasConnected && !_isForwarding) {
+      _wasConnected = true;
+      // Use post frame callback to avoid calling setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isForwarding) {
+          _toggleForwarding();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('GPS Forwarding enabled')),
+          );
+        }
+      });
+    }
+
+    // Auto-disable GPS forwarding when BLE disconnects
+    if (!isConnected && _wasConnected && _isForwarding) {
+      _wasConnected = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _isForwarding) {
+          _toggleForwarding();
+        }
+      });
+    }
+
+    // Update connection tracking
+    _wasConnected = isConnected;
   }
 
   @override
   void dispose() {
     _forwardTimer?.cancel();
+    // Disable wakelock when leaving screen
+    WakelockPlus.disable();
+    // Remove listener
+    context.read<BluetoothService>().removeListener(_onBluetoothStateChanged);
     super.dispose();
   }
 
@@ -48,6 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     if (_isForwarding) {
+      // Enable wakelock to prevent screen sleep during GPS forwarding
+      WakelockPlus.enable();
+
       // Start GPS tracking if not already
       if (!gpsService.isTracking) {
         gpsService.startTracking();
@@ -61,6 +105,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       });
     } else {
+      // Disable wakelock when GPS forwarding stops
+      WakelockPlus.disable();
+
       _forwardTimer?.cancel();
       _forwardTimer = null;
     }
@@ -265,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (bleService.isConnected) ...[
                   const SizedBox(height: 16),
                   SwitchListTile(
-                    title: const Text('GPS Forwarding'),
+                    title: const Text('Enable GPS Forwarding'),
                     subtitle: Text(_isForwarding ? 'Sending NMEA every second' : 'Disabled'),
                     value: _isForwarding,
                     onChanged: (_) => _toggleForwarding(),

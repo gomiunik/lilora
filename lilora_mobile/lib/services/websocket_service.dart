@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/range_point.dart';
 
@@ -24,6 +25,9 @@ class WebSocketService extends ChangeNotifier {
   static const Duration _initialReconnectDelay = Duration(seconds: 2);
   static const Duration _keepaliveInterval = Duration(seconds: 30);
 
+  // SharedPreferences key for URL persistence
+  static const String _urlKey = 'websocket_server_url';
+
   // Data streams
   final _rangePointController = StreamController<RangePoint>.broadcast();
   RangePoint? _lastRangePoint;
@@ -42,9 +46,21 @@ class WebSocketService extends ChangeNotifier {
   /// Stream of incoming range points
   Stream<RangePoint> get rangePointStream => _rangePointController.stream;
 
-  /// Set the server URL (call before connect)
-  void setServerUrl(String url) {
+  /// Load saved URL from SharedPreferences
+  Future<void> loadSavedUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString(_urlKey);
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      _serverUrl = savedUrl;
+      notifyListeners();
+    }
+  }
+
+  /// Set the server URL (call before connect) and persist to storage
+  Future<void> setServerUrl(String url) async {
     _serverUrl = url;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_urlKey, url);
     notifyListeners();
   }
 

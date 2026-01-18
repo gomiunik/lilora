@@ -33,7 +33,12 @@ class LiLoRaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PermissionService()),
         ChangeNotifierProvider(create: (_) => GpsService()),
         ChangeNotifierProvider(create: (_) => BluetoothService()),
-        ChangeNotifierProvider(create: (_) => WebSocketService()),
+        ChangeNotifierProvider(create: (_) {
+          final wsService = WebSocketService();
+          // Load saved URL from SharedPreferences on startup
+          wsService.loadSavedUrl();
+          return wsService;
+        }),
         ChangeNotifierProvider(create: (_) => SessionService()),
       ],
       child: MaterialApp(
