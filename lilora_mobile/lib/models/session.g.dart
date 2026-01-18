@@ -31,6 +31,7 @@ class SessionAdapter extends TypeAdapter<Session> {
       minSnr: fields[11] as double?,
       maxSnr: fields[12] as double?,
       avgSnr: fields[13] as double?,
+      failedCount: fields[16] as int,
     )
       .._rssiSum = fields[14] as double
       .._snrSum = fields[15] as double;
@@ -39,7 +40,7 @@ class SessionAdapter extends TypeAdapter<Session> {
   @override
   void write(BinaryWriter writer, Session obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -71,7 +72,9 @@ class SessionAdapter extends TypeAdapter<Session> {
       ..writeByte(14)
       ..write(obj._rssiSum)
       ..writeByte(15)
-      ..write(obj._snrSum);
+      ..write(obj._snrSum)
+      ..writeByte(16)
+      ..write(obj.failedCount);
   }
 
   @override

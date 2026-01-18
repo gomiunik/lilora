@@ -56,6 +56,10 @@ class Session extends HiveObject {
   @HiveField(15)
   double _snrSum;
 
+  // Failed transmission count
+  @HiveField(16)
+  int failedCount;
+
   Session({
     required this.id,
     required this.name,
@@ -71,6 +75,7 @@ class Session extends HiveObject {
     this.minSnr,
     this.maxSnr,
     this.avgSnr,
+    this.failedCount = 0,
     double rssiSum = 0,
     double snrSum = 0,
   })  : _rssiSum = rssiSum,
@@ -154,6 +159,7 @@ class Session extends HiveObject {
       minSnr: minSnr,
       maxSnr: maxSnr,
       avgSnr: avgSnr,
+      failedCount: failedCount,
       rssiSum: _rssiSum,
       snrSum: _snrSum,
     );
@@ -162,6 +168,10 @@ class Session extends HiveObject {
   /// Summary statistics as a map
   Map<String, dynamic> get statsMap => {
         'pointCount': pointCount,
+        'failedCount': failedCount,
+        'successRate': pointCount > 0 || failedCount > 0
+            ? (pointCount / (pointCount + failedCount) * 100).toStringAsFixed(1)
+            : null,
         'duration': durationText,
         'maxDistance': maxDistance,
         'minRssi': minRssi,

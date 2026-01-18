@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'models/range_point.dart';
 import 'models/session.dart';
+import 'models/sent_transmission.dart';
 import 'services/permission_service.dart';
 import 'services/gps_service.dart';
 import 'services/bluetooth_service.dart';
@@ -19,6 +20,7 @@ void main() async {
   // Register Hive adapters
   Hive.registerAdapter(RangePointAdapter());
   Hive.registerAdapter(SessionAdapter());
+  Hive.registerAdapter(SentTransmissionAdapter());
 
   runApp(const LiLoRaApp());
 }

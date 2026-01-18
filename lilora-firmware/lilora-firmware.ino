@@ -650,6 +650,21 @@ void doSendUplink() {
     uplinkCount++;
     Serial.println(F("[Uplink] Transmitted successfully"));
 
+    // Notify phone via BLE about the transmission (for tracking failed deliveries)
+    if (ENABLE_BLE_GPS && isBleConnected()) {
+        char txNotify[128];
+        // Format: TX,<frameCount>,<lat>,<lon>,<hasGps>
+        // Example: TX,42,46.056900,14.505800,1
+        snprintf(txNotify, sizeof(txNotify), "TX,%lu,%.6f,%.6f,%d\n",
+                 fCntUp,
+                 hasValidGps ? gpsData.latitude : 0.0,
+                 hasValidGps ? gpsData.longitude : 0.0,
+                 hasValidGps ? 1 : 0);
+        bleSend(txNotify);
+        Serial.print(F("[BLE] Sent TX notification: "));
+        Serial.print(txNotify);
+    }
+
     // Save session after successful uplink
     saveSession();
 

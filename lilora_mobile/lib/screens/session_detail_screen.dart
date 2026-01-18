@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/range_point.dart';
 import '../models/session.dart';
+import '../models/sent_transmission.dart';
 import '../services/session_service.dart';
 import '../utils/geo_utils.dart';
 
@@ -22,8 +23,13 @@ class SessionDetailScreen extends StatefulWidget {
 class _SessionDetailScreenState extends State<SessionDetailScreen> {
   Session? _session;
   List<RangePoint> _points = [];
+  List<SentTransmission> _failedTx = [];
   bool _isLoading = true;
   final MapController _mapController = MapController();
+
+  // Display toggles
+  bool _showFailed = true;
+  bool _showGatewayLines = false;
 
   @override
   void initState() {
@@ -40,10 +46,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     );
 
     final points = await sessionService.getSessionPoints(widget.sessionId);
+    final failedTx = await sessionService.getSessionFailedTx(widget.sessionId);
 
     setState(() {
       _session = session;
       _points = points;
+      _failedTx = failedTx;
       _isLoading = false;
     });
 
@@ -66,6 +74,26 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   void dispose() {
     _mapController.dispose();
     super.dispose();
+  }
+
+  /// Get unique gateways from points
+  List<Map<String, dynamic>> _getUniqueGateways() {
+    final seen = <String>{};
+    final gateways = <Map<String, dynamic>>[];
+
+    for (final p in _points) {
+      if (p.hasGatewayLocation && p.gatewayId != null) {
+        if (!seen.contains(p.gatewayId)) {
+          seen.add(p.gatewayId!);
+          gateways.add({
+            'id': p.gatewayId,
+            'lat': p.gatewayLat,
+            'lon': p.gatewayLon,
+          });
+        }
+      }
+    }
+    return gateways;
   }
 
   @override
@@ -110,6 +138,37 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       ),
       body: Column(
         children: [
+          // Display toggle bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: theme.colorScheme.surfaceContainerHighest,
+            child: Row(
+              children: [
+                FilterChip(
+                  label: Text('Failed (${_failedTx.length})'),
+                  selected: _showFailed,
+                  onSelected: (v) => setState(() => _showFailed = v),
+                  avatar: Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: _showFailed ? Colors.grey : null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: const Text('Gateway Lines'),
+                  selected: _showGatewayLines,
+                  onSelected: (v) => setState(() => _showGatewayLines = v),
+                  avatar: Icon(
+                    Icons.cell_tower,
+                    size: 16,
+                    color: _showGatewayLines ? Colors.purple : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Map showing all session points
           Expanded(
             flex: 2,
@@ -127,6 +186,22 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   userAgentPackageName: 'com.lilora.mobile',
                 ),
 
+                // Gateway connection lines
+                if (_showGatewayLines)
+                  PolylineLayer(
+                    polylines: _points
+                        .where((p) => p.hasValidGps && p.hasGatewayLocation)
+                        .map((p) => Polyline(
+                              points: [
+                                LatLng(p.latitude, p.longitude),
+                                LatLng(p.gatewayLat!, p.gatewayLon!),
+                              ],
+                              color: Colors.purple.withValues(alpha: 0.4),
+                              strokeWidth: 1.5,
+                            ))
+                        .toList(),
+                  ),
+
                 // Path line
                 if (_points.length > 1)
                   PolylineLayer(
@@ -142,7 +217,47 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                     ],
                   ),
 
-                // Point markers
+                // Gateway markers
+                if (_showGatewayLines)
+                  MarkerLayer(
+                    markers: _getUniqueGateways()
+                        .map((gw) => Marker(
+                              point: LatLng(gw['lat'] as double, gw['lon'] as double),
+                              width: 32,
+                              height: 32,
+                              child: const Icon(
+                                Icons.cell_tower,
+                                color: Colors.purple,
+                                size: 28,
+                              ),
+                            ))
+                        .toList(),
+                  ),
+
+                // Failed transmission markers (gray)
+                if (_showFailed && _failedTx.isNotEmpty)
+                  MarkerLayer(
+                    markers: _failedTx
+                        .where((tx) => tx.hasValidGps)
+                        .map((tx) => Marker(
+                              point: LatLng(tx.latitude, tx.longitude),
+                              width: 14,
+                              height: 14,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.close, size: 8, color: Colors.white),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+
+                // Point markers (successful)
                 MarkerLayer(
                   markers: _points
                       .where((p) => p.hasValidGps)
@@ -189,14 +304,32 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   }
 
   Widget _buildStatsGrid(Session session) {
+    final totalTx = session.pointCount + session.failedCount;
+    final successRate = totalTx > 0
+        ? (session.pointCount / totalTx * 100).toStringAsFixed(1)
+        : '-';
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         _StatTile(
           icon: Icons.pin_drop,
-          label: 'Points',
+          label: 'Received',
           value: '${session.pointCount}',
+          color: Colors.green,
+        ),
+        _StatTile(
+          icon: Icons.error_outline,
+          label: 'Failed',
+          value: '${session.failedCount}',
+          color: Colors.grey,
+        ),
+        _StatTile(
+          icon: Icons.percent,
+          label: 'Success',
+          value: '$successRate%',
+          color: totalTx > 0 ? _getSuccessRateColor(session.pointCount / totalTx) : null,
         ),
         _StatTile(
           icon: Icons.timer,
@@ -233,6 +366,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         ),
       ],
     );
+  }
+
+  Color _getSuccessRateColor(double rate) {
+    if (rate >= 0.9) return Colors.green;
+    if (rate >= 0.7) return Colors.orange;
+    return Colors.red;
   }
 
   Widget _buildDetailsCard(Session session) {
@@ -292,46 +431,86 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   }
 
   void _showExportOptions() {
+    bool exportFailed = _showFailed;
+    bool exportGatewayLines = _showGatewayLines;
+
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Export Session', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.code),
-                title: const Text('GeoJSON'),
-                subtitle: const Text('For QGIS, web maps, and GIS software'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _exportGeoJson();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.public),
-                title: const Text('KML'),
-                subtitle: const Text('For Google Earth and Maps'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _exportKml();
-                },
-              ),
-            ],
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Export Session', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 16),
+
+                // Export options
+                Text('Include in export:', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  value: exportFailed,
+                  onChanged: (v) => setModalState(() => exportFailed = v ?? true),
+                  title: Text('Failed transmissions (${_failedTx.length})'),
+                  subtitle: const Text('Gray markers for lost packets'),
+                  secondary: const Icon(Icons.error_outline, color: Colors.grey),
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: exportGatewayLines,
+                  onChanged: (v) => setModalState(() => exportGatewayLines = v ?? false),
+                  title: const Text('Gateway connection lines'),
+                  subtitle: const Text('Lines from points to gateways'),
+                  secondary: const Icon(Icons.cell_tower, color: Colors.purple),
+                  dense: true,
+                ),
+
+                const Divider(),
+                const SizedBox(height: 8),
+
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: const Text('GeoJSON'),
+                  subtitle: const Text('For QGIS, web maps, and GIS software'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _exportGeoJson(
+                      includeFailedTx: exportFailed,
+                      includeGatewayLines: exportGatewayLines,
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.public),
+                  title: const Text('KML'),
+                  subtitle: const Text('For Google Earth and Maps'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _exportKml();
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _exportGeoJson() async {
+  Future<void> _exportGeoJson({
+    bool includeFailedTx = true,
+    bool includeGatewayLines = false,
+  }) async {
     try {
       final sessionService = context.read<SessionService>();
-      final geoJson = await sessionService.exportToGeoJson(widget.sessionId);
+      final geoJson = await sessionService.exportToGeoJson(
+        widget.sessionId,
+        includeFailedTx: includeFailedTx,
+        includeGatewayLines: includeGatewayLines,
+      );
       final filename = '${_session!.name.replaceAll(' ', '_')}.geojson';
       final filePath = await sessionService.saveExportFile(geoJson, filename);
 

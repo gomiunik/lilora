@@ -110,20 +110,20 @@ class SessionCard extends StatelessWidget {
               const SizedBox(height: 8),
 
               // Stats row
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   // Point count
                   _StatChip(
                     icon: Icons.pin_drop,
                     label: '${session.pointCount} points',
                   ),
-                  const SizedBox(width: 8),
                   // Max distance
                   _StatChip(
                     icon: Icons.straighten,
                     label: 'Max: ${formatDistance(session.maxDistance)}',
                   ),
-                  const SizedBox(width: 8),
                   // Avg RSSI
                   if (session.avgRssi != null)
                     _StatChip(

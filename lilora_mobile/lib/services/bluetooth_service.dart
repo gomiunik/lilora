@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import '../models/sent_transmission.dart';
 
 /// Nordic UART Service UUIDs (industry standard)
 class NordicUartUuids {
@@ -24,6 +25,9 @@ class BluetoothService extends ChangeNotifier {
   String _statusMessage = 'Disconnected';
   String? _lastReceivedData;
 
+  // Stream controller for TX notifications from watch
+  final _txNotificationController = StreamController<SentTransmission>.broadcast();
+
   List<ScanResult> get scanResults => _scanResults;
   bool get isScanning => _isScanning;
   bool get isConnecting => _isConnecting;
@@ -31,6 +35,9 @@ class BluetoothService extends ChangeNotifier {
   String get statusMessage => _statusMessage;
   String? get connectedDeviceName => _connectedDevice?.platformName;
   String? get lastReceivedData => _lastReceivedData;
+
+  /// Stream of TX notifications (uplink transmissions) from watch
+  Stream<SentTransmission> get txNotificationStream => _txNotificationController.stream;
 
   /// Initialize Bluetooth service
   Future<void> initialize() async {
@@ -155,6 +162,15 @@ class BluetoothService extends ChangeNotifier {
         await _txCharacteristic!.setNotifyValue(true);
         _notifySubscription = _txCharacteristic!.onValueReceived.listen((data) {
           _lastReceivedData = utf8.decode(data);
+          debugPrint('BLE RX: $_lastReceivedData');
+
+          // Parse TX notifications from watch
+          final tx = SentTransmission.fromBleNotification(_lastReceivedData!);
+          if (tx != null) {
+            debugPrint('BLE: Received TX notification - frame ${tx.frameCount}');
+            _txNotificationController.add(tx);
+          }
+
           notifyListeners();
         });
       }
@@ -241,6 +257,7 @@ class BluetoothService extends ChangeNotifier {
   @override
   void dispose() {
     disconnect();
+    _txNotificationController.close();
     super.dispose();
   }
 }

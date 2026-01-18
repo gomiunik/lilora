@@ -4,7 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/range_point.dart';
+import '../models/sent_transmission.dart';
 import '../services/gps_service.dart';
+import '../services/bluetooth_service.dart';
 import '../services/websocket_service.dart';
 import '../services/session_service.dart';
 import '../utils/geo_utils.dart';
@@ -23,11 +25,15 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   final List<RangePoint> _displayedPoints = [];
+  final List<SentTransmission> _sentTransmissions = [];
   StreamSubscription<RangePoint>? _pointSubscription;
+  StreamSubscription<SentTransmission>? _txSubscription;
 
   // Map settings
   bool _autoCenter = true;
   bool _showPath = true;
+  bool _showFailed = true;
+  bool _showGatewayLines = false;
   double _currentZoom = 15.0;
 
   // Current center - will be updated with phone's GPS position
@@ -46,6 +52,7 @@ class _MapScreenState extends State<MapScreen> {
     final sessionService = context.read<SessionService>();
     final wsService = context.read<WebSocketService>();
     final gpsService = context.read<GpsService>();
+    final bleService = context.read<BluetoothService>();
 
     // Initialize session service
     if (!sessionService.isInitialized) {
@@ -64,11 +71,17 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
 
-    // Subscribe to range point stream
+    // Subscribe to range point stream (successful deliveries from WebSocket)
     _pointSubscription = wsService.rangePointStream.listen(_onRangePointReceived);
+
+    // Subscribe to TX notifications from watch (all transmissions)
+    _txSubscription = bleService.txNotificationStream.listen(_onTxNotificationReceived);
   }
 
   void _onRangePointReceived(RangePoint point) {
+    // Mark matching sent transmission as received
+    _markTransmissionReceived(point.frameCount);
+
     setState(() {
       _displayedPoints.add(point);
 
@@ -91,6 +104,62 @@ class _MapScreenState extends State<MapScreen> {
     if (sessionService.isRecording) {
       sessionService.addPoint(point);
     }
+  }
+
+  void _onTxNotificationReceived(SentTransmission tx) {
+    setState(() {
+      _sentTransmissions.add(tx);
+
+      // Limit list size
+      if (_sentTransmissions.length > 300) {
+        _sentTransmissions.removeRange(0, _sentTransmissions.length - 300);
+      }
+    });
+
+    // Schedule check for failed transmission after a delay
+    // If not matched within 10 seconds, consider it failed
+    final sessionService = context.read<SessionService>();
+    Future.delayed(const Duration(seconds: 10), () {
+      if (!tx.received && tx.hasValidGps && mounted) {
+        if (sessionService.isRecording) {
+          sessionService.addFailedTransmission(tx);
+        }
+      }
+    });
+  }
+
+  /// Mark a sent transmission as received when WebSocket data arrives
+  void _markTransmissionReceived(int frameCount) {
+    for (final tx in _sentTransmissions) {
+      if (tx.frameCount == frameCount && !tx.received) {
+        tx.received = true;
+        break;
+      }
+    }
+  }
+
+  /// Get list of failed (not received) transmissions with valid GPS
+  List<SentTransmission> get _failedTransmissions =>
+      _sentTransmissions.where((tx) => !tx.received && tx.hasValidGps).toList();
+
+  /// Get unique gateways from displayed points
+  List<Map<String, dynamic>> _getUniqueGateways() {
+    final seen = <String>{};
+    final gateways = <Map<String, dynamic>>[];
+
+    for (final p in _displayedPoints) {
+      if (p.hasGatewayLocation && p.gatewayId != null) {
+        if (!seen.contains(p.gatewayId)) {
+          seen.add(p.gatewayId!);
+          gateways.add({
+            'id': p.gatewayId,
+            'lat': p.gatewayLat,
+            'lon': p.gatewayLon,
+          });
+        }
+      }
+    }
+    return gateways;
   }
 
   void _toggleRecording() async {
@@ -116,6 +185,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _pointSubscription?.cancel();
+    _txSubscription?.cancel();
     _mapController.dispose();
     super.dispose();
   }
@@ -145,6 +215,34 @@ class _MapScreenState extends State<MapScreen> {
               });
             },
             tooltip: _showPath ? 'Hide path' : 'Show path',
+          ),
+          // Show failed transmissions toggle
+          IconButton(
+            icon: Icon(
+              _showFailed ? Icons.error : Icons.error_outline,
+              color: _showFailed && _failedTransmissions.isNotEmpty ? Colors.grey : null,
+            ),
+            onPressed: () {
+              setState(() {
+                _showFailed = !_showFailed;
+              });
+            },
+            tooltip: _showFailed
+                ? 'Hide failed (${_failedTransmissions.length})'
+                : 'Show failed (${_failedTransmissions.length})',
+          ),
+          // Show gateway lines toggle
+          IconButton(
+            icon: Icon(
+              Icons.cell_tower,
+              color: _showGatewayLines ? Colors.purple : null,
+            ),
+            onPressed: () {
+              setState(() {
+                _showGatewayLines = !_showGatewayLines;
+              });
+            },
+            tooltip: _showGatewayLines ? 'Hide gateway lines' : 'Show gateway lines',
           ),
           // Settings
           IconButton(
@@ -217,6 +315,22 @@ class _MapScreenState extends State<MapScreen> {
                   userAgentPackageName: 'com.lilora.mobile',
                 ),
 
+                // Gateway connection lines
+                if (_showGatewayLines)
+                  PolylineLayer(
+                    polylines: _displayedPoints
+                        .where((p) => p.hasValidGps && p.hasGatewayLocation)
+                        .map((p) => Polyline(
+                              points: [
+                                LatLng(p.latitude, p.longitude),
+                                LatLng(p.gatewayLat!, p.gatewayLon!),
+                              ],
+                              color: Colors.purple.withValues(alpha: 0.4),
+                              strokeWidth: 1.5,
+                            ))
+                        .toList(),
+                  ),
+
                 // Path line connecting points
                 if (_showPath && _displayedPoints.length > 1)
                   PolylineLayer(
@@ -232,27 +346,32 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
 
-                // Gateway marker (if available)
-                if (_displayedPoints.isNotEmpty && _displayedPoints.last.hasGatewayLocation)
+                // Gateway markers (unique gateways)
+                if (_showGatewayLines || (_displayedPoints.isNotEmpty && _displayedPoints.last.hasGatewayLocation))
                   MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: LatLng(
-                          _displayedPoints.last.gatewayLat!,
-                          _displayedPoints.last.gatewayLon!,
-                        ),
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.cell_tower,
-                          color: Colors.purple,
-                          size: 32,
-                        ),
-                      ),
-                    ],
+                    markers: _getUniqueGateways()
+                        .map((gw) => Marker(
+                              point: LatLng(gw['lat'] as double, gw['lon'] as double),
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.cell_tower,
+                                color: Colors.purple,
+                                size: 32,
+                              ),
+                            ))
+                        .toList(),
                   ),
 
-                // Range point markers
+                // Failed transmission markers (gray)
+                if (_showFailed && _failedTransmissions.isNotEmpty)
+                  MarkerLayer(
+                    markers: _failedTransmissions
+                        .map((failed) => _buildFailedMarker(failed))
+                        .toList(),
+                  ),
+
+                // Range point markers (successful)
                 MarkerLayer(
                   markers: _displayedPoints
                       .where((p) => p.hasValidGps)
@@ -320,7 +439,41 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _showPointDetails(RangePoint point) {
+  Marker _buildFailedMarker(SentTransmission failed) {
+    const size = 12.0;
+
+    return Marker(
+      point: LatLng(failed.latitude, failed.longitude),
+      width: size + 8,
+      height: size + 8,
+      child: GestureDetector(
+        onTap: () => _showFailedDetails(failed),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.6),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.close,
+              size: 8,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFailedDetails(SentTransmission failed) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -333,42 +486,116 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    getSignalIcon(point.rssi),
-                    color: getRssiColor(point.rssi),
+                  const Icon(
+                    Icons.signal_cellular_off,
+                    color: Colors.grey,
                     size: 32,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Range Point',
+                    'Failed Transmission',
                     style: theme.textTheme.titleLarge,
                   ),
                   const Spacer(),
                   Chip(
-                    label: Text(point.signalQualityText),
-                    backgroundColor: getRssiColor(point.rssi).withValues(alpha: 0.2),
+                    label: const Text('Not received'),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              _detailRow('RSSI', formatRssi(point.rssi)),
-              _detailRow('SNR', formatSnr(point.snr)),
-              _detailRow('Distance', formatDistance(point.distance)),
-              _detailRow('Spreading Factor', formatSpreadingFactor(point.spreadingFactor)),
-              _detailRow('Frequency', formatFrequency(point.frequency)),
+              _detailRow('Frame', '#${failed.frameCount}'),
               const Divider(),
-              _detailRow('Latitude', point.latitude.toStringAsFixed(6)),
-              _detailRow('Longitude', point.longitude.toStringAsFixed(6)),
-              _detailRow('Altitude', '${point.altitude} m'),
-              _detailRow('Satellites', '${point.satellites}'),
-              _detailRow('HDOP', point.hdop.toStringAsFixed(1)),
-              const Divider(),
-              _detailRow('Frame', '#${point.frameCount}'),
-              _detailRow('Device', point.deviceEui),
-              _detailRow('Time', point.timestamp.toLocal().toString().split('.')[0]),
+              _detailRow('Latitude', failed.latitude.toStringAsFixed(6)),
+              _detailRow('Longitude', failed.longitude.toStringAsFixed(6)),
+              _detailRow('Sent at', failed.sentTime.toLocal().toString().split('.')[0]),
+              const SizedBox(height: 8),
+              Text(
+                'This transmission was sent by the watch but not received by the backend.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
               const SizedBox(height: 16),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showPointDetails(RangePoint point) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.25,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        getSignalIcon(point.rssi),
+                        color: getRssiColor(point.rssi),
+                        size: 32,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Range Point',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const Spacer(),
+                      Chip(
+                        label: Text(point.signalQualityText),
+                        backgroundColor: getRssiColor(point.rssi).withValues(alpha: 0.2),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _detailRow('RSSI', formatRssi(point.rssi)),
+                  _detailRow('SNR', formatSnr(point.snr)),
+                  _detailRow('Distance', formatDistance(point.distance)),
+                  _detailRow('Spreading Factor', formatSpreadingFactor(point.spreadingFactor)),
+                  _detailRow('Frequency', formatFrequency(point.frequency)),
+                  const Divider(),
+                  _detailRow('Latitude', point.latitude.toStringAsFixed(6)),
+                  _detailRow('Longitude', point.longitude.toStringAsFixed(6)),
+                  _detailRow('Altitude', '${point.altitude} m'),
+                  _detailRow('Satellites', '${point.satellites}'),
+                  _detailRow('HDOP', point.hdop.toStringAsFixed(1)),
+                  const Divider(),
+                  _detailRow('Frame', '#${point.frameCount}'),
+                  _detailRow('Device', point.deviceEui),
+                  _detailRow('Time', point.timestamp.toLocal().toString().split('.')[0]),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
         );
       },
     );

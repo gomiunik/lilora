@@ -7,20 +7,24 @@ import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import '../models/range_point.dart';
 import '../models/session.dart';
+import '../models/sent_transmission.dart';
 
 /// Service for managing range testing sessions.
 /// Handles session creation, recording, storage, and export.
 class SessionService extends ChangeNotifier {
   static const String _sessionBoxName = 'sessions';
   static const String _rangePointBoxName = 'range_points';
+  static const String _failedTxBoxName = 'failed_transmissions';
 
   Box<Session>? _sessionBox;
   Box<RangePoint>? _rangePointBox;
+  Box<SentTransmission>? _failedTxBox;
   bool _isInitialized = false;
 
   // Active session state
   Session? _activeSession;
   final List<RangePoint> _currentSessionPoints = [];
+  final List<SentTransmission> _currentSessionFailedTx = [];
 
   // All sessions (cached)
   List<Session> _sessions = [];
@@ -30,6 +34,7 @@ class SessionService extends ChangeNotifier {
   Session? get activeSession => _activeSession;
   bool get isRecording => _activeSession != null;
   List<RangePoint> get currentSessionPoints => List.unmodifiable(_currentSessionPoints);
+  List<SentTransmission> get currentSessionFailedTx => List.unmodifiable(_currentSessionFailedTx);
   List<Session> get sessions => List.unmodifiable(_sessions);
 
   /// Initialize Hive boxes for storage
@@ -38,6 +43,7 @@ class SessionService extends ChangeNotifier {
 
     _sessionBox = await Hive.openBox<Session>(_sessionBoxName);
     _rangePointBox = await Hive.openBox<RangePoint>(_rangePointBoxName);
+    _failedTxBox = await Hive.openBox<SentTransmission>(_failedTxBoxName);
 
     // Load all sessions
     _sessions = _sessionBox!.values.toList();
@@ -67,6 +73,7 @@ class SessionService extends ChangeNotifier {
     // Add to local list
     _sessions.insert(0, _activeSession!);
     _currentSessionPoints.clear();
+    _currentSessionFailedTx.clear();
 
     notifyListeners();
     return _activeSession!;
@@ -82,6 +89,7 @@ class SessionService extends ChangeNotifier {
     final stoppedSession = _activeSession;
     _activeSession = null;
     _currentSessionPoints.clear();
+    _currentSessionFailedTx.clear();
 
     notifyListeners();
     return stoppedSession;
@@ -132,6 +140,35 @@ class SessionService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Add a failed transmission to the active session
+  Future<void> addFailedTransmission(SentTransmission tx) async {
+    if (!_isInitialized) return;
+    if (_activeSession == null) return;
+
+    // Create a copy with session ID
+    final sessionTx = SentTransmission(
+      frameCount: tx.frameCount,
+      latitude: tx.latitude,
+      longitude: tx.longitude,
+      hasValidGps: tx.hasValidGps,
+      sentTime: tx.sentTime,
+      received: false,
+      sessionId: _activeSession!.id,
+    );
+
+    // Save to Hive
+    await _failedTxBox!.put(sessionTx.storageKey, sessionTx);
+
+    // Update session failed count
+    _activeSession!.failedCount++;
+    await _activeSession!.save();
+
+    // Add to current session failed tx
+    _currentSessionFailedTx.add(sessionTx);
+
+    notifyListeners();
+  }
+
   /// Get all points for a specific session
   Future<List<RangePoint>> getSessionPoints(String sessionId) async {
     if (!_isInitialized) return [];
@@ -146,6 +183,20 @@ class SessionService extends ChangeNotifier {
     return points;
   }
 
+  /// Get all failed transmissions for a specific session
+  Future<List<SentTransmission>> getSessionFailedTx(String sessionId) async {
+    if (!_isInitialized) return [];
+
+    final failed = _failedTxBox!.values
+        .where((tx) => tx.sessionId == sessionId)
+        .toList();
+
+    // Sort by sent time
+    failed.sort((a, b) => a.sentTime.compareTo(b.sentTime));
+
+    return failed;
+  }
+
   /// Delete a session and its points
   Future<void> deleteSession(String sessionId) async {
     if (!_isInitialized) return;
@@ -157,6 +208,15 @@ class SessionService extends ChangeNotifier {
 
     for (final key in pointKeys) {
       await _rangePointBox!.delete(key);
+    }
+
+    // Delete all failed transmissions for this session
+    final txKeys = _failedTxBox!.keys
+        .where((key) => key.toString().startsWith('${sessionId}_'))
+        .toList();
+
+    for (final key in txKeys) {
+      await _failedTxBox!.delete(key);
     }
 
     // Delete the session
@@ -181,11 +241,50 @@ class SessionService extends ChangeNotifier {
   }
 
   /// Export session to GeoJSON format
-  Future<String> exportToGeoJson(String sessionId) async {
+  Future<String> exportToGeoJson(
+    String sessionId, {
+    bool includeFailedTx = true,
+    bool includeGatewayLines = true,
+  }) async {
     final points = await getSessionPoints(sessionId);
+    final failedTx = await getSessionFailedTx(sessionId);
     final session = _sessionBox!.get(sessionId);
 
-    final features = points.map((p) => p.toGeoJsonFeature()).toList();
+    final features = <Map<String, dynamic>>[];
+
+    // Add range points
+    features.addAll(points.map((p) => p.toGeoJsonFeature()));
+
+    // Add failed transmissions if requested
+    if (includeFailedTx) {
+      features.addAll(failedTx.map((tx) => tx.toGeoJsonFeature()));
+    }
+
+    // Add gateway connection lines if requested
+    if (includeGatewayLines) {
+      for (final point in points) {
+        if (point.hasGatewayLocation && point.hasValidGps) {
+          features.add({
+            'type': 'Feature',
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': [
+                [point.longitude, point.latitude],
+                [point.gatewayLon!, point.gatewayLat!],
+              ],
+            },
+            'properties': {
+              'type': 'gateway_line',
+              'frame_count': point.frameCount,
+              'gateway_id': point.gatewayId,
+              'rssi': point.rssi,
+              'snr': point.snr,
+              'distance': point.distance,
+            },
+          });
+        }
+      }
+    }
 
     final geoJson = {
       'type': 'FeatureCollection',
@@ -194,8 +293,14 @@ class SessionService extends ChangeNotifier {
         'startTime': session?.startTime.toIso8601String(),
         'endTime': session?.endTime?.toIso8601String(),
         'pointCount': points.length,
+        'failedCount': session?.failedCount ?? failedTx.length,
+        'successRate': points.isNotEmpty || failedTx.isNotEmpty
+            ? (points.length / (points.length + failedTx.length) * 100)
+            : null,
         'maxDistance': session?.maxDistance,
         'avgRssi': session?.avgRssi,
+        'includesFailedTransmissions': includeFailedTx,
+        'includesGatewayLines': includeGatewayLines,
       },
       'features': features,
     };
@@ -321,6 +426,7 @@ class SessionService extends ChangeNotifier {
   void dispose() {
     _sessionBox?.close();
     _rangePointBox?.close();
+    _failedTxBox?.close();
     super.dispose();
   }
 }
