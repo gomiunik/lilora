@@ -191,7 +191,9 @@ void updateCountdown(uint32_t secondsRemaining) {
     static uint32_t lastDisplayedSeconds = 0xFFFFFFFF;
 
     // Calculate which "bucket" we're in based on refresh interval
-    uint32_t displayBucket = secondsRemaining / DISPLAY_REFRESH_INTERVAL_SECONDS;
+    // Use ceiling division so countdown shows higher value until crossing threshold
+    // e.g., with 10s interval: 59s still shows "60s", drops to "50s" at 50s
+    uint32_t displayBucket = (secondsRemaining + DISPLAY_REFRESH_INTERVAL_SECONDS - 1) / DISPLAY_REFRESH_INTERVAL_SECONDS;
     uint32_t displaySeconds = displayBucket * DISPLAY_REFRESH_INTERVAL_SECONDS;
 
     // Also update when crossing into single digits for better UX
