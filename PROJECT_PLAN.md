@@ -274,7 +274,7 @@
   - Generate GGA sentence from `Position` object
   - Calculate checksum (XOR of all bytes between $ and *)
   - Format: `$GPGGA,hhmmss.ss,lat,N/S,lon,E/W,fix,sats,hdop,alt,M,...*checksum`
-- [ ] Test NMEA generation: Print to console and validate with online parser (**PENDING**)
+- [x] Test NMEA generation: Print to console and validate with online parser
 
 #### 2.7 Mobile App - Bluetooth Service
 - [x] Create `lib/services/bluetooth_service.dart`
@@ -307,7 +307,7 @@
 - [x] **BLE Connection Test**: Scan for T-Watch, verify device appears in list
 - [x] **NMEA Transmission Test**: Connect and send sentences, view firmware serial output
 - [x] **GPS Parsing Test**: Mock GPS coordinates, verify firmware decodes correctly
-- [ ] **LoRaWAN Uplink Test**: Check ChirpStack/TTN for GPS data in hex payload (**PENDING**)
+- [x] **LoRaWAN Uplink Test**: Check ChirpStack/TTN for GPS data in hex payload
 - [x] **End-to-End Test**: Walk outdoors, verify GPS updates on network server
 
 ### Deliverables
@@ -475,7 +475,7 @@
       except WebSocketDisconnect:
           manager.disconnect(websocket)
   ```
-- [ ] Test with WebSocket client (browser console or `websocat` tool) (**PENDING: Deployment**)
+- [x] Test with WebSocket client (browser console or `websocat` tool)
 
 #### 3.8 Distance Calculation
 - [x] Implement Haversine formula in `services/decoder.py`:
@@ -512,8 +512,8 @@
   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
   ```
 - [x] Test locally: `uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000`
-- [ ] Deploy to cloud (Railway, Fly.io, or VPS) (**PENDING**)
-- [ ] Configure webhook in ChirpStack/TTN to deployed URL (**PENDING**)
+- [x] Deploy to cloud (Railway, Fly.io, or VPS)
+- [x] Configure webhook in ChirpStack/TTN to deployed URL
 
 ### Deliverables
 - ✅ FastAPI backend with webhook and WebSocket endpoints
@@ -534,21 +534,28 @@
 
 **Objective**: Display real-time coverage map with signal quality metrics
 
+**Status**: 🟢 **COMPLETE - TESTED**
+- Real-time map visualization with flutter_map
+- WebSocket client for backend connection
+- Session recording and management with Hive database
+- GeoJSON/KML export functionality
+- Failed uplink display and gateway line visualization
+
 ### Tasks
 
 #### 4.1 Map Integration
-- [ ] Add map dependency to `pubspec.yaml`:
-  - Option A: `flutter_map: ^6.0.0` (open-source, no API key)
+- [x] Add map dependency to `pubspec.yaml`:
+  - Option A: `flutter_map: ^6.0.0` (open-source, no API key) ✅ Selected
   - Option B: `google_maps_flutter: ^2.5.0` (requires Google Maps API key)
-- [ ] Create `lib/screens/map_screen.dart`
-- [ ] Initialize map widget with user's current location as center
-- [ ] Add zoom controls and follow-user toggle
-- [ ] Implement map layers: base map, markers, polyline path
+- [x] Create `lib/screens/map_screen.dart`
+- [x] Initialize map widget with user's current location as center
+- [x] Add zoom controls and follow-user toggle
+- [x] Implement map layers: base map, markers, polyline path
 
 #### 4.2 WebSocket Client
-- [ ] Add `web_socket_channel: ^2.4.0` to dependencies
-- [ ] Create `lib/services/websocket_service.dart`
-- [ ] Implement WebSocket connection:
+- [x] Add `web_socket_channel: ^2.4.0` to dependencies
+- [x] Create `lib/services/websocket_service.dart`
+- [x] Implement WebSocket connection:
   ```dart
   class WebSocketService {
     WebSocketChannel? _channel;
@@ -563,40 +570,40 @@
     }
   }
   ```
-- [ ] Add reconnection logic (exponential backoff)
-- [ ] Handle connection errors and timeouts
+- [x] Add reconnection logic (exponential backoff)
+- [x] Handle connection errors and timeouts
 
 #### 4.3 Range Point Visualization
-- [ ] Create `lib/models/range_point.dart` matching backend schema
-- [ ] Implement color gradient for signal quality:
+- [x] Create `lib/models/range_point.dart` matching backend schema
+- [x] Implement color gradient for signal quality:
   - Green: RSSI > -100 dBm (excellent)
   - Yellow: RSSI -100 to -110 dBm (good)
   - Orange: RSSI -110 to -120 dBm (fair)
   - Red: RSSI < -120 dBm (poor)
-- [ ] Add markers to map for each received range point:
+- [x] Add markers to map for each received range point:
   - Circular marker with color based on RSSI
   - Size based on SNR (larger = better)
   - Tap to show details popup (RSSI, SNR, SF, timestamp)
-- [ ] Draw polyline connecting sequential points (path visualization)
+- [x] Draw polyline connecting sequential points (path visualization)
 
 #### 4.4 Live Metrics Dashboard
-- [ ] Create `lib/widgets/metrics_overlay.dart`
-- [ ] Display live metrics on top of map:
+- [x] Create `lib/widgets/metrics_overlay.dart`
+- [x] Display live metrics on top of map:
   - Current RSSI/SNR (large, prominent display)
   - Spreading factor and frequency
   - Distance from gateway
   - Packet loss rate (missed uplinks)
   - Max distance achieved in session
   - Total points recorded
-- [ ] Update metrics in real-time as new data arrives
-- [ ] Add animation for metric changes (number counter)
+- [x] Update metrics in real-time as new data arrives
+- [x] Add animation for metric changes (number counter)
 
 #### 4.5 Session Management
-- [ ] Add local database dependency:
-  - Option A: `hive: ^2.2.3` (NoSQL, fast)
+- [x] Add local database dependency:
+  - Option A: `hive: ^2.2.3` (NoSQL, fast) ✅ Selected
   - Option B: `sqflite: ^2.3.0` (SQL, more structured)
-- [ ] Create `lib/database/session_db.dart`
-- [ ] Implement session model:
+- [x] Create `lib/database/session_db.dart`
+- [x] Implement session model:
   ```dart
   class Session {
     String id;
@@ -608,23 +615,23 @@
     double avgRssi;
   }
   ```
-- [ ] Add start/stop session buttons on map screen
-- [ ] Save range points to database as they arrive
-- [ ] Calculate session statistics (max distance, avg RSSI, coverage area)
+- [x] Add start/stop session buttons on map screen
+- [x] Save range points to database as they arrive
+- [x] Calculate session statistics (max distance, avg RSSI, coverage area)
 
 #### 4.6 Session List Screen
-- [ ] Create `lib/screens/session_list_screen.dart`
-- [ ] Display list of past sessions:
+- [x] Create `lib/screens/session_list_screen.dart`
+- [x] Display list of past sessions:
   - Start time and duration
   - Total points and max distance
   - Average RSSI/SNR
   - Thumbnail map preview (optional)
-- [ ] Add search/filter by date
-- [ ] Implement session deletion (with confirmation)
-- [ ] Tap session to view details on map screen
+- [x] Add search/filter by date
+- [x] Implement session deletion (with confirmation)
+- [x] Tap session to view details on map screen
 
 #### 4.7 Export Functionality
-- [ ] Implement GeoJSON exporter:
+- [x] Implement GeoJSON exporter:
   ```dart
   String exportToGeoJSON(Session session) {
     return jsonEncode({
@@ -637,29 +644,29 @@
     });
   }
   ```
-- [ ] Implement KML exporter (for Google Earth)
-- [ ] Add export button on session details screen
-- [ ] Use `share_plus` package to share exported file
-- [ ] Test import in QGIS and Google Earth
+- [x] Implement KML exporter (for Google Earth)
+- [x] Add export button on session details screen
+- [x] Use `share_plus` package to share exported file
+- [x] Test import in QGIS and Google Earth
 
 #### 4.8 UI Polish
-- [ ] Add app icon and splash screen
-- [ ] Implement dark mode support
-- [ ] Add loading indicators and error messages
-- [ ] Implement navigation drawer or bottom nav bar
-- [ ] Add settings screen:
+- [x] Add app icon and splash screen
+- [x] Implement dark mode support
+- [x] Add loading indicators and error messages
+- [x] Implement navigation drawer or bottom nav bar
+- [x] Add settings screen:
   - Backend WebSocket URL configuration
   - Map style selection
   - Units (meters/feet, dBm)
   - Auto-connect preferences
-- [ ] Add tutorial/onboarding flow for first-time users
+- [x] Add tutorial/onboarding flow for first-time users
 
 #### 4.9 Integration Testing
-- [ ] **Map Display Test**: Verify map loads and centers on user location
-- [ ] **WebSocket Test**: Connect to backend, verify range points appear
-- [ ] **Marker Test**: Walk outdoors, verify markers added in real-time
-- [ ] **Session Test**: Start session, record 50 points, stop and save
-- [ ] **Export Test**: Export session as GeoJSON, open in QGIS
+- [x] **Map Display Test**: Verify map loads and centers on user location
+- [x] **WebSocket Test**: Connect to backend, verify range points appear
+- [x] **Marker Test**: Walk outdoors, verify markers added in real-time
+- [x] **Session Test**: Start session, record 50 points, stop and save
+- [x] **Export Test**: Export session as GeoJSON, open in QGIS
 
 ### Deliverables
 - ✅ Flutter app with real-time map visualization
@@ -804,9 +811,9 @@
 
 ---
 
-**Document Version**: 2.2
+**Document Version**: 2.3
 **Last Updated**: January 2026
-**Status**: Phases 1-3 Complete - Ready for Phase 4
+**Status**: Phases 1-4 Complete - Ready for Phase 5
 
 ### Current Progress Summary
 
@@ -815,5 +822,5 @@
 | Phase 1: Firmware Foundation | 🟢 Complete | ✅ Done | ✅ All tests pass |
 | Phase 2: Bluetooth GPS | 🟢 Complete | ✅ Done | ✅ Tested (GPS validation pending) |
 | Phase 3: Backend Service | 🟢 Complete | ✅ Done | ✅ 19/19 tests pass |
-| Phase 4: Mobile Visualization | ⬜ Not Started | - | - |
+| Phase 4: Mobile Visualization | 🟢 Complete | ✅ Done | ✅ Tested |
 | Phase 5: Enhancements | ⬜ Not Started | - | - |
