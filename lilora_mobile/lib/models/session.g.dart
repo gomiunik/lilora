@@ -23,7 +23,7 @@ class SessionAdapter extends TypeAdapter<Session> {
       endTime: fields[3] as DateTime?,
       deviceEui: fields[4] as String?,
       notes: fields[5] as String?,
-      pointCount: fields[6] as int,
+      pointCount: (fields[6] as int?) ?? 0,
       maxDistance: fields[7] as double?,
       minRssi: fields[8] as double?,
       maxRssi: fields[9] as double?,
@@ -31,16 +31,20 @@ class SessionAdapter extends TypeAdapter<Session> {
       minSnr: fields[11] as double?,
       maxSnr: fields[12] as double?,
       avgSnr: fields[13] as double?,
-      failedCount: fields[16] as int,
+      failedCount: (fields[16] as int?) ?? 0,
+      minSf: fields[17] as int?,
+      maxSf: fields[18] as int?,
+      sfChangeCount: (fields[19] as int?) ?? 0,
     )
-      .._rssiSum = fields[14] as double
-      .._snrSum = fields[15] as double;
+      .._rssiSum = (fields[14] as double?) ?? 0.0
+      .._snrSum = (fields[15] as double?) ?? 0.0
+      .._lastSf = fields[20] as int?;
   }
 
   @override
   void write(BinaryWriter writer, Session obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -74,7 +78,15 @@ class SessionAdapter extends TypeAdapter<Session> {
       ..writeByte(15)
       ..write(obj._snrSum)
       ..writeByte(16)
-      ..write(obj.failedCount);
+      ..write(obj.failedCount)
+      ..writeByte(17)
+      ..write(obj.minSf)
+      ..writeByte(18)
+      ..write(obj.maxSf)
+      ..writeByte(19)
+      ..write(obj.sfChangeCount)
+      ..writeByte(20)
+      ..write(obj._lastSf);
   }
 
   @override

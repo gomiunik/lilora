@@ -1,5 +1,5 @@
 from .uplink import ChirpStackUplink, TTNUplink, GatewayMetadata
-from .range_point import RangePoint, GPSData
+from .range_point import RangePoint, GPSData, GatewayInfo
 
 __all__ = [
     "ChirpStackUplink",
@@ -7,4 +7,5 @@ __all__ = [
     "GatewayMetadata",
     "RangePoint",
     "GPSData",
+    "GatewayInfo",
 ]

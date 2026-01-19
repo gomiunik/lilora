@@ -96,9 +96,10 @@ class SessionService extends ChangeNotifier {
   }
 
   /// Add a range point to the active session
-  Future<void> addPoint(RangePoint point) async {
-    if (!_isInitialized) return;
-    if (_activeSession == null) return;
+  /// Returns true if spreading factor changed (ADR event)
+  Future<bool> addPoint(RangePoint point) async {
+    if (!_isInitialized) return false;
+    if (_activeSession == null) return false;
 
     // Create a new point with the session ID
     final sessionPoint = RangePoint(
@@ -120,17 +121,20 @@ class SessionService extends ChangeNotifier {
       gatewayLon: point.gatewayLon,
       distance: point.distance,
       sessionId: _activeSession!.id,
+      gateways: point.gateways,
+      gatewayCount: point.gatewayCount,
     );
 
     // Save to Hive
     await _rangePointBox!.put(sessionPoint.storageKey, sessionPoint);
 
-    // Update session statistics
-    _activeSession!.updateStats(
+    // Update session statistics (returns true if SF changed)
+    final sfChanged = _activeSession!.updateStats(
       rssi: point.rssi,
       snr: point.snr,
       distance: point.distance,
       deviceEui: point.deviceEui,
+      spreadingFactor: point.spreadingFactor,
     );
     await _activeSession!.save();
 
@@ -138,6 +142,7 @@ class SessionService extends ChangeNotifier {
     _currentSessionPoints.add(sessionPoint);
 
     notifyListeners();
+    return sfChanged;
   }
 
   /// Add a failed transmission to the active session
@@ -252,17 +257,45 @@ class SessionService extends ChangeNotifier {
 
     final features = <Map<String, dynamic>>[];
 
-    // Add range points
-    features.addAll(points.map((p) => p.toGeoJsonFeature()));
+    // Create a combined list of point features with timestamps for sorting
+    final pointFeatures = <_TimestampedFeature>[];
+
+    // Add range points with their timestamps
+    for (final p in points) {
+      pointFeatures.add(_TimestampedFeature(
+        timestamp: p.timestamp,
+        frameCount: p.frameCount,
+        feature: p.toGeoJsonFeature(),
+      ));
+    }
 
     // Add failed transmissions if requested
     if (includeFailedTx) {
-      features.addAll(failedTx.map((tx) => tx.toGeoJsonFeature()));
+      for (final tx in failedTx) {
+        pointFeatures.add(_TimestampedFeature(
+          timestamp: tx.sentTime,
+          frameCount: tx.frameCount,
+          feature: tx.toGeoJsonFeature(),
+        ));
+      }
     }
 
-    // Add gateway connection lines if requested
+    // Sort all point features by frame_count (primary) then timestamp (secondary)
+    pointFeatures.sort((a, b) {
+      final frameCompare = a.frameCount.compareTo(b.frameCount);
+      if (frameCompare != 0) return frameCompare;
+      return a.timestamp.compareTo(b.timestamp);
+    });
+
+    // Add sorted point features
+    features.addAll(pointFeatures.map((f) => f.feature));
+
+    // Add gateway connection lines if requested (sorted by frame_count)
     if (includeGatewayLines) {
-      for (final point in points) {
+      final sortedPoints = List<RangePoint>.from(points)
+        ..sort((a, b) => a.frameCount.compareTo(b.frameCount));
+
+      for (final point in sortedPoints) {
         if (point.hasGatewayLocation && point.hasValidGps) {
           features.add({
             'type': 'Feature',
@@ -307,7 +340,7 @@ class SessionService extends ChangeNotifier {
         'properties': {
           'type': 'gateway',
           'gateway_id': entry.key,
-          'marker-color': '#0000FF',
+          'marker-color': '#0000ff',
           'marker-symbol': 'circle-stroked',
         },
       });
@@ -456,4 +489,17 @@ class SessionService extends ChangeNotifier {
     _failedTxBox?.close();
     super.dispose();
   }
+}
+
+/// Helper class for sorting GeoJSON features by timestamp/frame_count
+class _TimestampedFeature {
+  final DateTime timestamp;
+  final int frameCount;
+  final Map<String, dynamic> feature;
+
+  _TimestampedFeature({
+    required this.timestamp,
+    required this.frameCount,
+    required this.feature,
+  });
 }

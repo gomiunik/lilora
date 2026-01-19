@@ -126,6 +126,11 @@ class ChirpStackUplink(BaseModel):
     def spreading_factor(self) -> int:
         return self.tx_info.spreading_factor
 
+    @property
+    def all_gateways(self) -> list[GatewayMetadata]:
+        """Get all gateways that received this uplink."""
+        return [rx.to_gateway_metadata() for rx in self.rx_info]
+
 
 class TTNUplinkMessage(BaseModel):
     """TTN v3 uplink_message structure."""
@@ -208,3 +213,21 @@ class TTNUplink(BaseModel):
         data_rate = settings.get("data_rate", {})
         lora = data_rate.get("lora", {})
         return lora.get("spreading_factor", 0)
+
+    @property
+    def all_gateways(self) -> list[GatewayMetadata]:
+        """Get all gateways that received this uplink."""
+        gateways = []
+        for rx in self.uplink_message.rx_metadata:
+            location = rx.get("location", {})
+            gateways.append(
+                GatewayMetadata(
+                    gatewayId=rx.get("gateway_ids", {}).get("gateway_id", ""),
+                    rssi=float(rx.get("rssi", 0)),
+                    snr=float(rx.get("snr", 0)),
+                    latitude=location.get("latitude"),
+                    longitude=location.get("longitude"),
+                    altitude=location.get("altitude"),
+                )
+            )
+        return gateways

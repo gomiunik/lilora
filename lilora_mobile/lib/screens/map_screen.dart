@@ -40,6 +40,9 @@ class _MapScreenState extends State<MapScreen> {
   LatLng _currentCenter = const LatLng(46.0569, 14.5058);
   bool _initialPositionSet = false;
 
+  // ADR tracking
+  int? _lastSpreadingFactor;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +85,13 @@ class _MapScreenState extends State<MapScreen> {
     // Mark matching sent transmission as received
     _markTransmissionReceived(point.frameCount);
 
+    // Check for ADR (spreading factor change)
+    if (_lastSpreadingFactor != null &&
+        _lastSpreadingFactor != point.spreadingFactor) {
+      _showAdrNotification(_lastSpreadingFactor!, point.spreadingFactor);
+    }
+    _lastSpreadingFactor = point.spreadingFactor;
+
     setState(() {
       _displayedPoints.add(point);
 
@@ -104,6 +114,30 @@ class _MapScreenState extends State<MapScreen> {
     if (sessionService.isRecording) {
       sessionService.addPoint(point);
     }
+  }
+
+  void _showAdrNotification(int previousSf, int currentSf) {
+    if (!mounted) return;
+
+    final increased = currentSf > previousSf;
+    final color = increased ? Colors.orange : Colors.green;
+    final icon = increased ? Icons.arrow_upward : Icons.arrow_downward;
+    final message = 'ADR: SF changed from SF$previousSf to SF$currentSf';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: color,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _onTxNotificationReceived(SentTransmission tx) {
@@ -142,24 +176,112 @@ class _MapScreenState extends State<MapScreen> {
   List<SentTransmission> get _failedTransmissions =>
       _sentTransmissions.where((tx) => !tx.received && tx.hasValidGps).toList();
 
-  /// Get unique gateways from displayed points
+  /// Get unique gateways from displayed points with aggregated stats
   List<Map<String, dynamic>> _getUniqueGateways() {
-    final seen = <String>{};
-    final gateways = <Map<String, dynamic>>[];
+    final gatewayStats = <String, Map<String, dynamic>>{};
 
     for (final p in _displayedPoints) {
+      // First, check best gateway (backward compatibility)
       if (p.hasGatewayLocation && p.gatewayId != null) {
-        if (!seen.contains(p.gatewayId)) {
-          seen.add(p.gatewayId!);
-          gateways.add({
-            'id': p.gatewayId,
-            'lat': p.gatewayLat,
-            'lon': p.gatewayLon,
-          });
+        _updateGatewayStats(gatewayStats, p.gatewayId!, p.gatewayLat!, p.gatewayLon!, p.rssi, p.snr);
+      }
+
+      // Then, check all gateways if available
+      if (p.gateways != null) {
+        for (final gw in p.gateways!) {
+          if (gw.hasLocation) {
+            _updateGatewayStats(gatewayStats, gw.gatewayId, gw.latitude!, gw.longitude!, gw.rssi, gw.snr);
+          }
         }
       }
     }
-    return gateways;
+
+    return gatewayStats.values.toList();
+  }
+
+  void _updateGatewayStats(
+    Map<String, Map<String, dynamic>> stats,
+    String id,
+    double lat,
+    double lon,
+    double rssi,
+    double snr,
+  ) {
+    if (!stats.containsKey(id)) {
+      stats[id] = {
+        'id': id,
+        'lat': lat,
+        'lon': lon,
+        'receptionCount': 0,
+        'rssiSum': 0.0,
+        'snrSum': 0.0,
+        'minRssi': rssi,
+        'maxRssi': rssi,
+      };
+    }
+
+    final gw = stats[id]!;
+    gw['receptionCount'] = (gw['receptionCount'] as int) + 1;
+    gw['rssiSum'] = (gw['rssiSum'] as double) + rssi;
+    gw['snrSum'] = (gw['snrSum'] as double) + snr;
+    gw['avgRssi'] = gw['rssiSum'] / gw['receptionCount'];
+    gw['avgSnr'] = gw['snrSum'] / gw['receptionCount'];
+    if (rssi < (gw['minRssi'] as double)) gw['minRssi'] = rssi;
+    if (rssi > (gw['maxRssi'] as double)) gw['maxRssi'] = rssi;
+  }
+
+  void _showGatewayDetails(Map<String, dynamic> gateway) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final receptionCount = gateway['receptionCount'] as int? ?? 0;
+        final avgRssi = gateway['avgRssi'] as double?;
+        final avgSnr = gateway['avgSnr'] as double?;
+        final minRssi = gateway['minRssi'] as double?;
+        final maxRssi = gateway['maxRssi'] as double?;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.cell_tower, color: Colors.purple, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gateway', style: theme.textTheme.titleLarge),
+                        Text(
+                          gateway['id'] as String? ?? 'Unknown',
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _detailRow('Receptions', '$receptionCount'),
+              _detailRow('Avg RSSI', avgRssi != null ? '${avgRssi.toStringAsFixed(1)} dBm' : '-'),
+              _detailRow('Avg SNR', avgSnr != null ? '${avgSnr.toStringAsFixed(1)} dB' : '-'),
+              _detailRow('RSSI Range', minRssi != null && maxRssi != null
+                  ? '${minRssi.toStringAsFixed(0)} to ${maxRssi.toStringAsFixed(0)} dBm'
+                  : '-'),
+              const Divider(),
+              _detailRow('Latitude', (gateway['lat'] as double?)?.toStringAsFixed(6) ?? '-'),
+              _detailRow('Longitude', (gateway['lon'] as double?)?.toStringAsFixed(6) ?? '-'),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _toggleAutoCenter() async {
@@ -203,11 +325,34 @@ class _MapScreenState extends State<MapScreen> {
         );
       }
     } else {
-      await sessionService.startSession();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recording started')),
-        );
+      try {
+        // Ensure session service is initialized
+        if (!sessionService.isInitialized) {
+          await sessionService.initialize();
+        }
+
+        // Clear the live map when starting a new recording
+        setState(() {
+          _displayedPoints.clear();
+          _sentTransmissions.clear();
+          _lastSpreadingFactor = null;
+        });
+
+        await sessionService.startSession();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Recording started')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to start recording: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -383,10 +528,13 @@ class _MapScreenState extends State<MapScreen> {
                               point: LatLng(gw['lat'] as double, gw['lon'] as double),
                               width: 40,
                               height: 40,
-                              child: const Icon(
-                                Icons.cell_tower,
-                                color: Colors.purple,
-                                size: 32,
+                              child: GestureDetector(
+                                onTap: () => _showGatewayDetails(gw),
+                                child: const Icon(
+                                  Icons.cell_tower,
+                                  color: Colors.purple,
+                                  size: 32,
+                                ),
                               ),
                             ))
                         .toList(),
@@ -620,6 +768,54 @@ class _MapScreenState extends State<MapScreen> {
                   _detailRow('Frame', '#${point.frameCount}'),
                   _detailRow('Device', point.deviceEui),
                   _detailRow('Time', point.timestamp.toLocal().toString().split('.')[0]),
+                  // Multi-gateway info
+                  if (point.gatewayCount != null && point.gatewayCount! > 0) ...[
+                    const Divider(),
+                    Row(
+                      children: [
+                        const Icon(Icons.cell_tower, size: 18, color: Colors.purple),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Gateways (${point.gatewayCount})',
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (point.gateways != null)
+                      ...point.gateways!.map((gw) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              gw.gatewayId,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                _gatewayMetric('RSSI', '${gw.rssi.toStringAsFixed(0)} dBm', getRssiColor(gw.rssi)),
+                                const SizedBox(width: 16),
+                                _gatewayMetric('SNR', '${gw.snr.toStringAsFixed(1)} dB', null),
+                                if (gw.distance != null) ...[
+                                  const SizedBox(width: 16),
+                                  _gatewayMetric('Dist', formatDistance(gw.distance), null),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      )),
+                  ],
                   const SizedBox(height: 16),
                 ],
               ),
@@ -627,6 +823,23 @@ class _MapScreenState extends State<MapScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _gatewayMetric(String label, String value, Color? color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 

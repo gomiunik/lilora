@@ -17,7 +17,8 @@ void main() async {
   // Initialize Hive for local storage
   await Hive.initFlutter();
 
-  // Register Hive adapters
+  // Register Hive adapters (GatewayInfo must be registered before RangePoint)
+  Hive.registerAdapter(GatewayInfoAdapter());
   Hive.registerAdapter(RangePointAdapter());
   Hive.registerAdapter(SessionAdapter());
   Hive.registerAdapter(SentTransmissionAdapter());

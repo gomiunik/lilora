@@ -6,7 +6,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Header, HTTPException, Request
 
-from models import ChirpStackUplink, TTNUplink, RangePoint
+from models import ChirpStackUplink, TTNUplink, RangePoint, GatewayInfo
+from models.uplink import GatewayMetadata
 from services.decoder import decode_payload, calculate_distance
 from services.websocket_manager import manager
 
@@ -25,6 +26,7 @@ def _create_range_point(
     gateway_id: Optional[str],
     gateway_lat: Optional[float],
     gateway_lon: Optional[float],
+    all_gateways: Optional[list[GatewayMetadata]] = None,
     timestamp: Optional[datetime] = None,
 ) -> Optional[RangePoint]:
     """
@@ -32,6 +34,7 @@ def _create_range_point(
 
     Args:
         Various uplink parameters
+        all_gateways: List of all gateways that received this uplink
 
     Returns:
         RangePoint or None if payload decoding fails
@@ -41,7 +44,7 @@ def _create_range_point(
         logger.warning(f"Failed to decode payload: {payload_hex}")
         return None
 
-    # Calculate distance from gateway if coordinates available
+    # Calculate distance from best gateway if coordinates available
     distance = None
     if gateway_lat is not None and gateway_lon is not None:
         distance = calculate_distance(
@@ -50,6 +53,29 @@ def _create_range_point(
             gateway_lat,
             gateway_lon,
         )
+
+    # Process all gateways and calculate distances
+    gateways: list[GatewayInfo] = []
+    if all_gateways:
+        for gw in all_gateways:
+            gw_distance = None
+            if gw.latitude is not None and gw.longitude is not None:
+                gw_distance = calculate_distance(
+                    gps_data.latitude,
+                    gps_data.longitude,
+                    gw.latitude,
+                    gw.longitude,
+                )
+            gateways.append(
+                GatewayInfo(
+                    gateway_id=gw.gateway_id,
+                    rssi=gw.rssi,
+                    snr=gw.snr,
+                    latitude=gw.latitude,
+                    longitude=gw.longitude,
+                    distance=gw_distance,
+                )
+            )
 
     return RangePoint(
         timestamp=timestamp or datetime.utcnow(),
@@ -69,6 +95,8 @@ def _create_range_point(
         gateway_lat=gateway_lat,
         gateway_lon=gateway_lon,
         distance=distance,
+        gateways=gateways,
+        gateway_count=len(gateways),
     )
 
 
@@ -113,6 +141,7 @@ async def chirpstack_webhook(
         gateway_id=gateway.gateway_id if gateway else None,
         gateway_lat=gateway.latitude if gateway else None,
         gateway_lon=gateway.longitude if gateway else None,
+        all_gateways=uplink.all_gateways,
         timestamp=uplink.time,
     )
 
@@ -120,7 +149,8 @@ async def chirpstack_webhook(
         await manager.broadcast(range_point.to_broadcast_dict())
         logger.info(
             f"Broadcast range point: lat={range_point.latitude:.6f}, "
-            f"lon={range_point.longitude:.6f}, rssi={range_point.rssi}"
+            f"lon={range_point.longitude:.6f}, rssi={range_point.rssi}, "
+            f"gateways={range_point.gateway_count}"
         )
 
     return {"status": "ok", "decoded": range_point is not None}
@@ -163,6 +193,7 @@ async def ttn_webhook(
         gateway_id=gateway.gateway_id if gateway else None,
         gateway_lat=gateway.latitude if gateway else None,
         gateway_lon=gateway.longitude if gateway else None,
+        all_gateways=uplink.all_gateways,
         timestamp=uplink.received_at,
     )
 
@@ -170,7 +201,8 @@ async def ttn_webhook(
         await manager.broadcast(range_point.to_broadcast_dict())
         logger.info(
             f"Broadcast range point: lat={range_point.latitude:.6f}, "
-            f"lon={range_point.longitude:.6f}, rssi={range_point.rssi}"
+            f"lon={range_point.longitude:.6f}, rssi={range_point.rssi}, "
+            f"gateways={range_point.gateway_count}"
         )
 
     return {"status": "ok", "decoded": range_point is not None}

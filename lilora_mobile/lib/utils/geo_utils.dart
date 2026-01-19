@@ -109,10 +109,11 @@ List<int> get rssiThresholds => [-80, -100, -110, -120];
 
 /// Get hex color string for GeoJSON marker-color property based on RSSI value.
 /// Returns colors matching the Flutter display colors.
+/// Uses lowercase hex for GeoJSON simplestyle-spec compatibility.
 String getRssiMarkerColor(double rssi) {
-  if (rssi > -80) return '#4CAF50'; // Green
-  if (rssi > -100) return '#8BC34A'; // Light Green
-  if (rssi > -110) return '#FF9800'; // Orange
-  if (rssi > -120) return '#FF5722'; // Deep Orange
-  return '#F44336'; // Red
+  if (rssi > -80) return '#4caf50'; // Green
+  if (rssi > -100) return '#8bc34a'; // Light Green
+  if (rssi > -110) return '#ff9800'; // Orange
+  if (rssi > -120) return '#ff5722'; // Deep Orange
+  return '#f44336'; // Red
 }

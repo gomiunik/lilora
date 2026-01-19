@@ -3,6 +3,64 @@ import '../utils/geo_utils.dart';
 
 part 'range_point.g.dart';
 
+/// Information about a gateway that received the uplink.
+@HiveType(typeId: 2)
+class GatewayInfo extends HiveObject {
+  @HiveField(0)
+  final String gatewayId;
+
+  @HiveField(1)
+  final double rssi;
+
+  @HiveField(2)
+  final double snr;
+
+  @HiveField(3)
+  final double? latitude;
+
+  @HiveField(4)
+  final double? longitude;
+
+  @HiveField(5)
+  final double? distance;
+
+  GatewayInfo({
+    required this.gatewayId,
+    required this.rssi,
+    required this.snr,
+    this.latitude,
+    this.longitude,
+    this.distance,
+  });
+
+  /// Create from JSON
+  factory GatewayInfo.fromJson(Map<String, dynamic> json) {
+    return GatewayInfo(
+      gatewayId: json['gateway_id'] as String? ?? '',
+      rssi: (json['rssi'] as num).toDouble(),
+      snr: (json['snr'] as num).toDouble(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      distance: (json['distance'] as num?)?.toDouble(),
+    );
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'gateway_id': gatewayId,
+      'rssi': rssi,
+      'snr': snr,
+      'latitude': latitude,
+      'longitude': longitude,
+      'distance': distance,
+    };
+  }
+
+  /// Check if gateway has location
+  bool get hasLocation => latitude != null && longitude != null;
+}
+
 /// A single range measurement point from LoRaWAN uplink.
 /// Matches the backend WebSocket JSON format exactly.
 @HiveType(typeId: 0)
@@ -65,6 +123,13 @@ class RangePoint extends HiveObject {
   @HiveField(17)
   final String? sessionId;
 
+  // Multi-gateway support
+  @HiveField(18)
+  final List<GatewayInfo>? gateways;
+
+  @HiveField(19)
+  final int? gatewayCount;
+
   RangePoint({
     required this.timestamp,
     required this.deviceEui,
@@ -84,10 +149,20 @@ class RangePoint extends HiveObject {
     this.gatewayLon,
     this.distance,
     this.sessionId,
+    this.gateways,
+    this.gatewayCount,
   });
 
   /// Create from backend WebSocket JSON message
   factory RangePoint.fromJson(Map<String, dynamic> json, {String? sessionId}) {
+    // Parse gateways array if present
+    List<GatewayInfo>? gateways;
+    if (json['gateways'] != null) {
+      gateways = (json['gateways'] as List)
+          .map((gw) => GatewayInfo.fromJson(gw as Map<String, dynamic>))
+          .toList();
+    }
+
     return RangePoint(
       timestamp: DateTime.parse(json['timestamp'] as String),
       deviceEui: json['device_eui'] as String,
@@ -107,6 +182,8 @@ class RangePoint extends HiveObject {
       gatewayLon: (json['gateway_lon'] as num?)?.toDouble(),
       distance: (json['distance'] as num?)?.toDouble(),
       sessionId: sessionId,
+      gateways: gateways,
+      gatewayCount: json['gateway_count'] as int?,
     );
   }
 
@@ -130,6 +207,8 @@ class RangePoint extends HiveObject {
       'gateway_lat': gatewayLat,
       'gateway_lon': gatewayLon,
       'distance': distance,
+      'gateways': gateways?.map((gw) => gw.toJson()).toList(),
+      'gateway_count': gatewayCount,
     };
   }
 
@@ -154,6 +233,12 @@ class RangePoint extends HiveObject {
     if (gatewayId != null) properties['gateway_id'] = gatewayId;
     if (gatewayLat != null) properties['gateway_lat'] = gatewayLat;
     if (gatewayLon != null) properties['gateway_lon'] = gatewayLon;
+
+    // Include multi-gateway info
+    if (gatewayCount != null) properties['gateway_count'] = gatewayCount;
+    if (gateways != null && gateways!.isNotEmpty) {
+      properties['gateways'] = gateways!.map((gw) => gw.toJson()).toList();
+    }
 
     return {
       'type': 'Feature',

@@ -60,6 +60,20 @@ class Session extends HiveObject {
   @HiveField(16)
   int failedCount;
 
+  // ADR / Spreading Factor tracking
+  @HiveField(17)
+  int? minSf;
+
+  @HiveField(18)
+  int? maxSf;
+
+  @HiveField(19)
+  int sfChangeCount;
+
+  // Private: track previous SF for detecting changes (not persisted)
+  @HiveField(20)
+  int? _lastSf;
+
   Session({
     required this.id,
     required this.name,
@@ -76,10 +90,15 @@ class Session extends HiveObject {
     this.maxSnr,
     this.avgSnr,
     this.failedCount = 0,
+    this.minSf,
+    this.maxSf,
+    this.sfChangeCount = 0,
+    int? lastSf,
     double rssiSum = 0,
     double snrSum = 0,
   })  : _rssiSum = rssiSum,
-        _snrSum = snrSum;
+        _snrSum = snrSum,
+        _lastSf = lastSf;
 
   /// Whether the session is currently being recorded
   bool get isActive => endTime == null;
@@ -103,13 +122,16 @@ class Session extends HiveObject {
   }
 
   /// Update statistics when a new point is added
-  void updateStats({
+  /// Returns true if spreading factor changed (for ADR notification)
+  bool updateStats({
     required double rssi,
     required double snr,
     double? distance,
     String? deviceEui,
+    int? spreadingFactor,
   }) {
     pointCount++;
+    bool sfChanged = false;
 
     // Track device EUI from first point
     if (this.deviceEui == null && deviceEui != null) {
@@ -133,6 +155,21 @@ class Session extends HiveObject {
       maxDistance =
           maxDistance == null ? distance : (distance > maxDistance! ? distance : maxDistance);
     }
+
+    // Update spreading factor statistics
+    if (spreadingFactor != null) {
+      minSf = minSf == null ? spreadingFactor : (spreadingFactor < minSf! ? spreadingFactor : minSf);
+      maxSf = maxSf == null ? spreadingFactor : (spreadingFactor > maxSf! ? spreadingFactor : maxSf);
+
+      // Detect SF change (ADR)
+      if (_lastSf != null && _lastSf != spreadingFactor) {
+        sfChangeCount++;
+        sfChanged = true;
+      }
+      _lastSf = spreadingFactor;
+    }
+
+    return sfChanged;
   }
 
   /// Stop the recording session
@@ -160,6 +197,10 @@ class Session extends HiveObject {
       maxSnr: maxSnr,
       avgSnr: avgSnr,
       failedCount: failedCount,
+      minSf: minSf,
+      maxSf: maxSf,
+      sfChangeCount: sfChangeCount,
+      lastSf: _lastSf,
       rssiSum: _rssiSum,
       snrSum: _snrSum,
     );
@@ -180,7 +221,17 @@ class Session extends HiveObject {
         'minSnr': minSnr,
         'maxSnr': maxSnr,
         'avgSnr': avgSnr,
+        'minSf': minSf,
+        'maxSf': maxSf,
+        'sfChangeCount': sfChangeCount,
       };
+
+  /// Human-readable SF range string (e.g., "SF7-SF12" or "SF7")
+  String get sfRangeText {
+    if (minSf == null && maxSf == null) return '-';
+    if (minSf == maxSf) return 'SF$minSf';
+    return 'SF$minSf-SF$maxSf';
+  }
 
   @override
   String toString() {

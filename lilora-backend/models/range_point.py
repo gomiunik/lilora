@@ -1,7 +1,7 @@
 """Data models for decoded GPS data and range points."""
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -14,6 +14,17 @@ class GPSData(BaseModel):
     altitude: int = Field(description="Altitude in meters above sea level")
     hdop: float = Field(ge=0, description="Horizontal dilution of precision")
     satellites: int = Field(ge=0, description="Number of satellites in view")
+
+
+class GatewayInfo(BaseModel):
+    """Information about a gateway that received the uplink."""
+
+    gateway_id: str
+    rssi: float
+    snr: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = None
 
 
 class RangePoint(BaseModel):
@@ -37,13 +48,17 @@ class RangePoint(BaseModel):
     spreading_factor: int = Field(ge=7, le=12, description="LoRa spreading factor")
     frequency: float = Field(description="Frequency in MHz")
 
-    # Gateway Info
+    # Gateway Info (best gateway for backward compatibility)
     gateway_id: Optional[str] = None
     gateway_lat: Optional[float] = None
     gateway_lon: Optional[float] = None
 
     # Calculated Fields
     distance: Optional[float] = Field(default=None, description="Distance from gateway in meters")
+
+    # Multi-gateway support
+    gateways: List[GatewayInfo] = Field(default_factory=list, description="All gateways that received this uplink")
+    gateway_count: int = Field(default=0, description="Number of gateways that received this uplink")
 
     def to_broadcast_dict(self) -> dict:
         """Convert to dictionary for WebSocket broadcast."""
@@ -65,4 +80,6 @@ class RangePoint(BaseModel):
             "gateway_lat": self.gateway_lat,
             "gateway_lon": self.gateway_lon,
             "distance": self.distance,
+            "gateways": [gw.model_dump() for gw in self.gateways],
+            "gateway_count": self.gateway_count,
         }

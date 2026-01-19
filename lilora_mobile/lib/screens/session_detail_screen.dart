@@ -30,6 +30,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   // Display toggles
   bool _showFailed = true;
   bool _showGatewayLines = false;
+  bool _showPath = true;
 
   @override
   void initState() {
@@ -76,24 +77,58 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     super.dispose();
   }
 
-  /// Get unique gateways from points
+  /// Get unique gateways from points with aggregated stats
   List<Map<String, dynamic>> _getUniqueGateways() {
-    final seen = <String>{};
-    final gateways = <Map<String, dynamic>>[];
+    final gatewayStats = <String, Map<String, dynamic>>{};
 
     for (final p in _points) {
+      // First, check best gateway (backward compatibility)
       if (p.hasGatewayLocation && p.gatewayId != null) {
-        if (!seen.contains(p.gatewayId)) {
-          seen.add(p.gatewayId!);
-          gateways.add({
-            'id': p.gatewayId,
-            'lat': p.gatewayLat,
-            'lon': p.gatewayLon,
-          });
+        _updateGatewayStats(gatewayStats, p.gatewayId!, p.gatewayLat!, p.gatewayLon!, p.rssi, p.snr);
+      }
+
+      // Then, check all gateways if available
+      if (p.gateways != null) {
+        for (final gw in p.gateways!) {
+          if (gw.hasLocation) {
+            _updateGatewayStats(gatewayStats, gw.gatewayId, gw.latitude!, gw.longitude!, gw.rssi, gw.snr);
+          }
         }
       }
     }
-    return gateways;
+
+    return gatewayStats.values.toList();
+  }
+
+  void _updateGatewayStats(
+    Map<String, Map<String, dynamic>> stats,
+    String id,
+    double lat,
+    double lon,
+    double rssi,
+    double snr,
+  ) {
+    if (!stats.containsKey(id)) {
+      stats[id] = {
+        'id': id,
+        'lat': lat,
+        'lon': lon,
+        'receptionCount': 0,
+        'rssiSum': 0.0,
+        'snrSum': 0.0,
+        'minRssi': rssi,
+        'maxRssi': rssi,
+      };
+    }
+
+    final gw = stats[id]!;
+    gw['receptionCount'] = (gw['receptionCount'] as int) + 1;
+    gw['rssiSum'] = (gw['rssiSum'] as double) + rssi;
+    gw['snrSum'] = (gw['snrSum'] as double) + snr;
+    gw['avgRssi'] = gw['rssiSum'] / gw['receptionCount'];
+    gw['avgSnr'] = gw['snrSum'] / gw['receptionCount'];
+    if (rssi < (gw['minRssi'] as double)) gw['minRssi'] = rssi;
+    if (rssi > (gw['maxRssi'] as double)) gw['maxRssi'] = rssi;
   }
 
   @override
@@ -142,30 +177,44 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             color: theme.colorScheme.surfaceContainerHighest,
-            child: Row(
-              children: [
-                FilterChip(
-                  label: Text('Failed (${_failedTx.length})'),
-                  selected: _showFailed,
-                  onSelected: (v) => setState(() => _showFailed = v),
-                  avatar: Icon(
-                    Icons.error_outline,
-                    size: 16,
-                    color: _showFailed ? Colors.grey : null,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: const Text('Path'),
+                    selected: _showPath,
+                    onSelected: (v) => setState(() => _showPath = v),
+                    avatar: Icon(
+                      Icons.show_chart,
+                      size: 16,
+                      color: _showPath ? theme.colorScheme.primary : null,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Gateway Lines'),
-                  selected: _showGatewayLines,
-                  onSelected: (v) => setState(() => _showGatewayLines = v),
-                  avatar: Icon(
-                    Icons.cell_tower,
-                    size: 16,
-                    color: _showGatewayLines ? Colors.purple : null,
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text('Failed (${_failedTx.length})'),
+                    selected: _showFailed,
+                    onSelected: (v) => setState(() => _showFailed = v),
+                    avatar: Icon(
+                      Icons.error_outline,
+                      size: 16,
+                      color: _showFailed ? Colors.grey : null,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('Gateways'),
+                    selected: _showGatewayLines,
+                    onSelected: (v) => setState(() => _showGatewayLines = v),
+                    avatar: Icon(
+                      Icons.cell_tower,
+                      size: 16,
+                      color: _showGatewayLines ? Colors.purple : null,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -203,7 +252,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   ),
 
                 // Path line
-                if (_points.length > 1)
+                if (_showPath && _points.length > 1)
                   PolylineLayer(
                     polylines: [
                       Polyline(
@@ -223,12 +272,15 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                     markers: _getUniqueGateways()
                         .map((gw) => Marker(
                               point: LatLng(gw['lat'] as double, gw['lon'] as double),
-                              width: 32,
-                              height: 32,
-                              child: const Icon(
-                                Icons.cell_tower,
-                                color: Colors.purple,
-                                size: 28,
+                              width: 40,
+                              height: 40,
+                              child: GestureDetector(
+                                onTap: () => _showGatewayDetails(gw),
+                                child: const Icon(
+                                  Icons.cell_tower,
+                                  color: Colors.purple,
+                                  size: 32,
+                                ),
                               ),
                             ))
                         .toList(),
@@ -241,16 +293,26 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                         .where((tx) => tx.hasValidGps)
                         .map((tx) => Marker(
                               point: LatLng(tx.latitude, tx.longitude),
-                              width: 14,
-                              height: 14,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 0.6),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1),
-                                ),
-                                child: const Center(
-                                  child: Icon(Icons.close, size: 8, color: Colors.white),
+                              width: 20,
+                              height: 20,
+                              child: GestureDetector(
+                                onTap: () => _showFailedDetails(tx),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withValues(alpha: 0.6),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.2),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.close, size: 8, color: Colors.white),
+                                  ),
                                 ),
                               ),
                             ))
@@ -261,18 +323,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 MarkerLayer(
                   markers: _points
                       .where((p) => p.hasValidGps)
-                      .map((point) => Marker(
-                            point: LatLng(point.latitude, point.longitude),
-                            width: 16,
-                            height: 16,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: getRssiColor(point.rssi).withValues(alpha: 0.8),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1),
-                              ),
-                            ),
-                          ))
+                      .map((point) => _buildMarker(point))
                       .toList(),
                 ),
               ],
@@ -363,6 +414,17 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           icon: Icons.show_chart,
           label: 'Avg SNR',
           value: session.avgSnr != null ? '${session.avgSnr!.toStringAsFixed(1)} dB' : '-',
+        ),
+        _StatTile(
+          icon: Icons.settings_input_antenna,
+          label: 'SF Range',
+          value: session.sfRangeText,
+        ),
+        _StatTile(
+          icon: Icons.swap_vert,
+          label: 'ADR Changes',
+          value: '${session.sfChangeCount}',
+          color: session.sfChangeCount > 0 ? Colors.orange : null,
         ),
       ],
     );
@@ -583,6 +645,294 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         );
       }
     }
+  }
+
+  Marker _buildMarker(RangePoint point) {
+    final color = getRssiColor(point.rssi);
+    final size = getMarkerSize(point.snr);
+
+    return Marker(
+      point: LatLng(point.latitude, point.longitude),
+      width: size + 8,
+      height: size + 8,
+      child: GestureDetector(
+        onTap: () => _showPointDetails(point),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.8),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showGatewayDetails(Map<String, dynamic> gateway) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final receptionCount = gateway['receptionCount'] as int? ?? 0;
+        final avgRssi = gateway['avgRssi'] as double?;
+        final avgSnr = gateway['avgSnr'] as double?;
+        final minRssi = gateway['minRssi'] as double?;
+        final maxRssi = gateway['maxRssi'] as double?;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.cell_tower, color: Colors.purple, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gateway', style: theme.textTheme.titleLarge),
+                        Text(
+                          gateway['id'] as String? ?? 'Unknown',
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _infoRow('Receptions', '$receptionCount'),
+              _infoRow('Avg RSSI', avgRssi != null ? '${avgRssi.toStringAsFixed(1)} dBm' : '-'),
+              _infoRow('Avg SNR', avgSnr != null ? '${avgSnr.toStringAsFixed(1)} dB' : '-'),
+              _infoRow('RSSI Range', minRssi != null && maxRssi != null
+                  ? '${minRssi.toStringAsFixed(0)} to ${maxRssi.toStringAsFixed(0)} dBm'
+                  : '-'),
+              const Divider(),
+              _infoRow('Latitude', (gateway['lat'] as double?)?.toStringAsFixed(6) ?? '-'),
+              _infoRow('Longitude', (gateway['lon'] as double?)?.toStringAsFixed(6) ?? '-'),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFailedDetails(SentTransmission failed) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.signal_cellular_off,
+                    color: Colors.grey,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Failed Transmission',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const Spacer(),
+                  Chip(
+                    label: const Text('Not received'),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _infoRow('Frame', '#${failed.frameCount}'),
+              const Divider(),
+              _infoRow('Latitude', failed.latitude.toStringAsFixed(6)),
+              _infoRow('Longitude', failed.longitude.toStringAsFixed(6)),
+              _infoRow('Sent at', failed.sentTime.toLocal().toString().split('.')[0]),
+              const SizedBox(height: 8),
+              Text(
+                'This transmission was sent by the watch but not received by the backend.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPointDetails(RangePoint point) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.25,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        getSignalIcon(point.rssi),
+                        color: getRssiColor(point.rssi),
+                        size: 32,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Range Point',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const Spacer(),
+                      Chip(
+                        label: Text(point.signalQualityText),
+                        backgroundColor: getRssiColor(point.rssi).withValues(alpha: 0.2),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _infoRow('RSSI', formatRssi(point.rssi)),
+                  _infoRow('SNR', formatSnr(point.snr)),
+                  _infoRow('Distance', formatDistance(point.distance)),
+                  _infoRow('Spreading Factor', formatSpreadingFactor(point.spreadingFactor)),
+                  _infoRow('Frequency', formatFrequency(point.frequency)),
+                  const Divider(),
+                  _infoRow('Latitude', point.latitude.toStringAsFixed(6)),
+                  _infoRow('Longitude', point.longitude.toStringAsFixed(6)),
+                  _infoRow('Altitude', '${point.altitude} m'),
+                  _infoRow('Satellites', '${point.satellites}'),
+                  _infoRow('HDOP', point.hdop.toStringAsFixed(1)),
+                  const Divider(),
+                  _infoRow('Frame', '#${point.frameCount}'),
+                  _infoRow('Device', point.deviceEui),
+                  _infoRow('Time', point.timestamp.toLocal().toString().split('.')[0]),
+                  // Multi-gateway info
+                  if (point.gatewayCount != null && point.gatewayCount! > 0) ...[
+                    const Divider(),
+                    Row(
+                      children: [
+                        const Icon(Icons.cell_tower, size: 18, color: Colors.purple),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Gateways (${point.gatewayCount})',
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (point.gateways != null)
+                      ...point.gateways!.map((gw) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              gw.gatewayId,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                _gatewayMetric('RSSI', '${gw.rssi.toStringAsFixed(0)} dBm', getRssiColor(gw.rssi)),
+                                const SizedBox(width: 16),
+                                _gatewayMetric('SNR', '${gw.snr.toStringAsFixed(1)} dB', null),
+                                if (gw.distance != null) ...[
+                                  const SizedBox(width: 16),
+                                  _gatewayMetric('Dist', formatDistance(gw.distance), null),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      )),
+                  ],
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _gatewayMetric(String label, String value, Color? color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(value),
+        ],
+      ),
+    );
   }
 }
 
