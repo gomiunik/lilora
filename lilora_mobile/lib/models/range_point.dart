@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import '../utils/geo_utils.dart';
 
 part 'range_point.g.dart';
 
@@ -146,6 +147,7 @@ class RangePoint extends HiveObject {
       'fix_quality': fixQuality,
       'hdop': hdop,
       'satellites': satellites,
+      'marker-color': getRssiMarkerColor(rssi),
     };
 
     // Include gateway info if available

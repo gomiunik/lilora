@@ -280,10 +280,37 @@ class SessionService extends ChangeNotifier {
               'rssi': point.rssi,
               'snr': point.snr,
               'distance': point.distance,
+              'timestamp': point.timestamp.toIso8601String(),
             },
           });
         }
       }
+    }
+
+    // Collect unique gateways and add as Point features
+    final gateways = <String, Map<String, dynamic>>{};
+    for (final point in points) {
+      if (point.gatewayId != null && point.hasGatewayLocation) {
+        gateways[point.gatewayId!] = {
+          'lat': point.gatewayLat!,
+          'lon': point.gatewayLon!,
+        };
+      }
+    }
+    for (final entry in gateways.entries) {
+      features.add({
+        'type': 'Feature',
+        'geometry': {
+          'type': 'Point',
+          'coordinates': [entry.value['lon'], entry.value['lat']],
+        },
+        'properties': {
+          'type': 'gateway',
+          'gateway_id': entry.key,
+          'marker-color': '#0000FF',
+          'marker-symbol': 'circle-stroked',
+        },
+      });
     }
 
     final geoJson = {

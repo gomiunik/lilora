@@ -76,8 +76,10 @@ class SentTransmission extends HiveObject {
       'properties': {
         'type': 'failed_transmission',
         'frame_count': frameCount,
+        'timestamp': sentTime.toIso8601String(),
         'sent_time': sentTime.toIso8601String(),
         'has_valid_gps': hasValidGps,
+        'marker-color': '#808080', // Gray for failed transmissions
       },
     };
   }
