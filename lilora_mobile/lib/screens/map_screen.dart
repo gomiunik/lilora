@@ -162,6 +162,36 @@ class _MapScreenState extends State<MapScreen> {
     return gateways;
   }
 
+  void _toggleAutoCenter() async {
+    setState(() {
+      _autoCenter = !_autoCenter;
+    });
+
+    // If enabling auto-center, immediately center on the best available position
+    if (_autoCenter) {
+      // First try to center on the last displayed point with valid GPS
+      final validPoints = _displayedPoints.where((p) => p.hasValidGps).toList();
+      if (validPoints.isNotEmpty) {
+        final lastPoint = validPoints.last;
+        _mapController.move(
+          LatLng(lastPoint.latitude, lastPoint.longitude),
+          _currentZoom,
+        );
+        return;
+      }
+
+      // Otherwise, center on current phone GPS position
+      final gpsService = context.read<GpsService>();
+      final position = await gpsService.getCurrentPosition();
+      if (position != null && mounted) {
+        _mapController.move(
+          LatLng(position.latitude, position.longitude),
+          _currentZoom,
+        );
+      }
+    }
+  }
+
   void _toggleRecording() async {
     final sessionService = context.read<SessionService>();
 
@@ -199,16 +229,15 @@ class _MapScreenState extends State<MapScreen> {
           // Auto-center toggle
           IconButton(
             icon: Icon(_autoCenter ? Icons.gps_fixed : Icons.gps_not_fixed),
-            onPressed: () {
-              setState(() {
-                _autoCenter = !_autoCenter;
-              });
-            },
+            onPressed: _toggleAutoCenter,
             tooltip: _autoCenter ? 'Auto-center on' : 'Auto-center off',
           ),
           // Show path toggle
           IconButton(
-            icon: Icon(_showPath ? Icons.timeline : Icons.timeline_outlined),
+            icon: Icon(
+              _showPath ? Icons.show_chart : Icons.show_chart_outlined,
+              color: _showPath ? Theme.of(context).colorScheme.primary : null,
+            ),
             onPressed: () {
               setState(() {
                 _showPath = !_showPath;
