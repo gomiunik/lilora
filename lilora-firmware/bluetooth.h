@@ -6,6 +6,7 @@
  *
  * Implements Nordic UART Service (NUS) to receive NMEA sentences from mobile app.
  * Uses standard UUIDs for compatibility with nRF Connect and other BLE tools.
+ * Also handles command protocol for remote uplink triggering.
  */
 
 #include <BLEDevice.h>
@@ -22,6 +23,9 @@
 // BLE Configuration
 #define BLE_DEVICE_NAME_PREFIX  "LiLoRa"
 #define BLE_NMEA_BUFFER_SIZE    512  // Circular buffer for NMEA sentences
+
+// External flag for phone-triggered uplink (defined in main .ino)
+extern volatile bool phoneUplinkRequested;
 
 // =============================================================================
 // Circular Buffer for NMEA Reception
@@ -124,6 +128,12 @@ class BleRxCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic* pCharacteristic) {
         String rxValue = pCharacteristic->getValue();
         if (rxValue.length() > 0) {
+            // Check for command prefix (CMD,<command>)
+            if (rxValue.startsWith("CMD,")) {
+                handleBleCommand(rxValue.substring(4));
+                return;
+            }
+
             // Add received data to NMEA buffer
             nmeaBuffer.write(rxValue.c_str(), rxValue.length());
 
@@ -140,6 +150,21 @@ class BleRxCallbacks : public BLECharacteristicCallbacks {
                 clean.trim();
                 Serial.println(clean);
             }
+        }
+    }
+
+    void handleBleCommand(String cmd) {
+        cmd.trim();
+        Serial.print(F("[BLE] Command received: "));
+        Serial.println(cmd);
+
+        if (cmd == "TX" || cmd == "SEND") {
+            // Phone requested an uplink transmission
+            phoneUplinkRequested = true;
+            Serial.println(F("[BLE] Phone requested uplink"));
+        } else {
+            Serial.print(F("[BLE] Unknown command: "));
+            Serial.println(cmd);
         }
     }
 };

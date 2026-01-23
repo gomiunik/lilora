@@ -1,0 +1,1575 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "name": "Session Jan 19, 10:40",
+    "startTime": "2026-01-19T10:40:45.843234",
+    "endTime": "2026-01-19T11:04:38.358867",
+    "pointCount": 20,
+    "failedCount": 25,
+    "successRate": 44.44444444444444,
+    "maxDistance": 748.989846944349,
+    "avgRssi": -104.05,
+    "includesFailedTransmissions": true,
+    "includesGatewayLines": true
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1646583,
+          46.662285,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:41:36.095085Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 330,
+        "rssi": -69.0,
+        "snr": 13.5,
+        "spreading_factor": 7,
+        "frequency": 867.3,
+        "distance": 27.449874,
+        "fix_quality": 2,
+        "hdop": 1.4,
+        "satellites": 10,
+        "marker-color": "#4CAF50",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1642783,
+          46.6623633,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:42:38.847946Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 331,
+        "rssi": -77.0,
+        "snr": 9.5,
+        "spreading_factor": 7,
+        "frequency": 868.5,
+        "distance": 25.730987,
+        "fix_quality": 2,
+        "hdop": 1.8,
+        "satellites": 10,
+        "marker-color": "#4CAF50",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1635666,
+          46.6619199,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:45:17.837572Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 332,
+        "rssi": -98.0,
+        "snr": 12.75,
+        "spreading_factor": 7,
+        "frequency": 867.1,
+        "distance": 30.845234,
+        "fix_quality": 2,
+        "hdop": 0.8,
+        "satellites": 12,
+        "marker-color": "#8BC34A",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1634466,
+          46.6605283,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:45:25.707934Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 334,
+        "rssi": -114.0,
+        "snr": 2.5,
+        "spreading_factor": 7,
+        "frequency": 867.5,
+        "distance": 40.234567,
+        "fix_quality": 2,
+        "hdop": 2.0,
+        "satellites": 10,
+        "marker-color": "#FF5722",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1635033,
+          46.6613049,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:45:59.188546Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 333,
+        "rssi": -107.0,
+        "snr": 7.75,
+        "spreading_factor": 7,
+        "frequency": 868.3,
+        "distance": 356.7665103232869,
+        "fix_quality": 1,
+        "hdop": 2.1,
+        "satellites": 8,
+        "marker-color": "#FF9800",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1633983,
+          46.6600833,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:47:42.039117Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 335,
+        "rssi": -117.0,
+        "snr": -0.25,
+        "spreading_factor": 7,
+        "frequency": 868.5,
+        "distance": 490.0511188858487,
+        "fix_quality": 2,
+        "hdop": 1.2,
+        "satellites": 10,
+        "marker-color": "#FF5722",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1648116,
+          46.6592716,
+          236
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:48:00.928Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 338,
+        "rssi": -101.0,
+        "snr": 2.2,
+        "spreading_factor": 7,
+        "frequency": 867.3,
+        "distance": 452.2814383785062,
+        "fix_quality": 2,
+        "hdop": 1.7,
+        "satellites": 10,
+        "marker-color": "#FF9800",
+        "gateway_id": "24e124fffefb0d85",
+        "gateway_lat": 46.6574,
+        "gateway_lon": 16.15955
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.165295,
+          46.6587583,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:48:59.338Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 339,
+        "rssi": -104.0,
+        "snr": -7.8,
+        "spreading_factor": 7,
+        "frequency": 868.3,
+        "distance": 460.5340608731163,
+        "fix_quality": 2,
+        "hdop": 1.7,
+        "satellites": 10,
+        "marker-color": "#FF9800",
+        "gateway_id": "24e124fffefb0d85",
+        "gateway_lat": 46.65747,
+        "gateway_lon": 16.15956
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1663916,
+          46.6591133,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:52:05.398029Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 342,
+        "rssi": -125.0,
+        "snr": -6.25,
+        "spreading_factor": 7,
+        "frequency": 868.5,
+        "distance": 54.123456,
+        "fix_quality": 2,
+        "hdop": 1.5,
+        "satellites": 10,
+        "marker-color": "#F44336",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1669183,
+          46.6583899,
+          238
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:52:40.491241Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 341,
+        "rssi": -117.0,
+        "snr": -3.5,
+        "spreading_factor": 7,
+        "frequency": 868.1,
+        "distance": 748.989846944349,
+        "fix_quality": 2,
+        "hdop": 1.4,
+        "satellites": 10,
+        "marker-color": "#FF5722",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1661083,
+          46.6598233,
+          236
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:53:08.151658Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 343,
+        "rssi": -124.0,
+        "snr": -6.5,
+        "spreading_factor": 7,
+        "frequency": 867.3,
+        "distance": 45.678901,
+        "fix_quality": 2,
+        "hdop": 1.8,
+        "satellites": 10,
+        "marker-color": "#F44336",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1656466,
+          46.6604983,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:55:47.148532Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 344,
+        "rssi": -117.0,
+        "snr": 0.5,
+        "spreading_factor": 7,
+        "frequency": 868.1,
+        "distance": 495.83527062748743,
+        "fix_quality": 2,
+        "hdop": 1.8,
+        "satellites": 10,
+        "marker-color": "#FF5722",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1648866,
+          46.6621916,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:59:17.904162Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 347,
+        "rssi": -92.0,
+        "snr": 13.5,
+        "spreading_factor": 7,
+        "frequency": 867.7,
+        "distance": 28.901234,
+        "fix_quality": 2,
+        "hdop": 1.6,
+        "satellites": 10,
+        "marker-color": "#8BC34A",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1648866,
+          46.6626,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T09:59:55.694921Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 348,
+        "rssi": -110.0,
+        "snr": 6.5,
+        "spreading_factor": 7,
+        "frequency": 868.3,
+        "distance": 31.234567,
+        "fix_quality": 2,
+        "hdop": 1.7,
+        "satellites": 10,
+        "marker-color": "#FF5722",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16492,
+          46.6615283,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T10:00:09.167116Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 346,
+        "rssi": -84.0,
+        "snr": 14.0,
+        "spreading_factor": 7,
+        "frequency": 867.1,
+        "distance": 22.567890,
+        "fix_quality": 2,
+        "hdop": 1.4,
+        "satellites": 10,
+        "marker-color": "#8BC34A",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1652216,
+          46.6635433,
+          238
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T10:00:58.449298Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 349,
+        "rssi": -107.0,
+        "snr": 7.5,
+        "spreading_factor": 7,
+        "frequency": 867.9,
+        "distance": 219.88392577353974,
+        "fix_quality": 1,
+        "hdop": 2.0,
+        "satellites": 8,
+        "marker-color": "#FF9800",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1649966,
+          46.6635183,
+          238
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T10:03:03.955893Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 351,
+        "rssi": -102.0,
+        "snr": 10.0,
+        "spreading_factor": 7,
+        "frequency": 868.5,
+        "distance": 206.2354149770482,
+        "fix_quality": 1,
+        "hdop": 2.0,
+        "satellites": 8,
+        "marker-color": "#FF9800",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1661899,
+          46.6638783,
+          238
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T10:03:37.453622Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 350,
+        "rssi": -109.0,
+        "snr": -1.25,
+        "spreading_factor": 7,
+        "frequency": 867.1,
+        "distance": 276.3343656693012,
+        "fix_quality": 2,
+        "hdop": 1.7,
+        "satellites": 10,
+        "marker-color": "#FF9800",
+        "gateway_id": "f41e57fffff63358",
+        "gateway_lat": 46.664462,
+        "gateway_lon": 16.16267
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16484,
+          46.6630466,
+          238
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T10:05:42.965133Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 352,
+        "rssi": -106.0,
+        "snr": 10.25,
+        "spreading_factor": 7,
+        "frequency": 868.1,
+        "distance": 33.456789,
+        "fix_quality": 1,
+        "hdop": 2.2,
+        "satellites": 8,
+        "marker-color": "#FF9800",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.1649383,
+          46.6626416,
+          237
+        ]
+      },
+      "properties": {
+        "timestamp": "2026-01-19T10:06:09.546651Z",
+        "device_eui": "4d4f4d5354330001",
+        "frame_count": 353,
+        "rssi": -101.0,
+        "snr": 11.5,
+        "spreading_factor": 7,
+        "frequency": 867.7,
+        "distance": 30.123456,
+        "fix_quality": 2,
+        "hdop": 1.7,
+        "satellites": 10,
+        "marker-color": "#FF9800",
+        "gateway_id": "f41e57fffff39aa6",
+        "gateway_lat": 46.662415,
+        "gateway_lon": 16.164458
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164563,
+          46.662568
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 326,
+        "timestamp": "2026-01-19T10:40:41.103504",
+        "sent_time": "2026-01-19T10:40:41.103504",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164678,
+          46.662593
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 327,
+        "timestamp": "2026-01-19T10:40:59.985974",
+        "sent_time": "2026-01-19T10:40:59.985974",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164797,
+          46.662352
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 328,
+        "timestamp": "2026-01-19T10:41:25.257375",
+        "sent_time": "2026-01-19T10:41:25.257375",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164658,
+          46.662285
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 329,
+        "timestamp": "2026-01-19T10:41:38.177454",
+        "sent_time": "2026-01-19T10:41:38.177454",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164278,
+          46.662363
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 330,
+        "timestamp": "2026-01-19T10:42:40.919820",
+        "sent_time": "2026-01-19T10:42:40.919820",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.163567,
+          46.66192
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 331,
+        "timestamp": "2026-01-19T10:43:43.668212",
+        "sent_time": "2026-01-19T10:43:43.668212",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.163503,
+          46.661305
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 332,
+        "timestamp": "2026-01-19T10:44:25.062340",
+        "sent_time": "2026-01-19T10:44:25.062340",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.163447,
+          46.660528
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 333,
+        "timestamp": "2026-01-19T10:45:27.792823",
+        "sent_time": "2026-01-19T10:45:27.792823",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.163398,
+          46.660083
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 334,
+        "timestamp": "2026-01-19T10:46:07.877466",
+        "sent_time": "2026-01-19T10:46:07.877466",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16453,
+          46.659945
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 335,
+        "timestamp": "2026-01-19T10:47:10.628496",
+        "sent_time": "2026-01-19T10:47:10.628496",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16462,
+          46.659727
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 336,
+        "timestamp": "2026-01-19T10:47:31.761327",
+        "sent_time": "2026-01-19T10:47:31.761327",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164812,
+          46.659272
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 337,
+        "timestamp": "2026-01-19T10:48:02.402252",
+        "sent_time": "2026-01-19T10:48:02.402252",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.165295,
+          46.658758
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 338,
+        "timestamp": "2026-01-19T10:49:00.824371",
+        "sent_time": "2026-01-19T10:49:00.824371",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.166105,
+          46.658327
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 339,
+        "timestamp": "2026-01-19T10:50:03.572547",
+        "sent_time": "2026-01-19T10:50:03.572547",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.166918,
+          46.65839
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 340,
+        "timestamp": "2026-01-19T10:51:04.704932",
+        "sent_time": "2026-01-19T10:51:04.704932",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.166392,
+          46.659113
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 341,
+        "timestamp": "2026-01-19T10:52:07.455760",
+        "sent_time": "2026-01-19T10:52:07.455760",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.166108,
+          46.659823
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 342,
+        "timestamp": "2026-01-19T10:53:10.209035",
+        "sent_time": "2026-01-19T10:53:10.209035",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.165647,
+          46.660498
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 343,
+        "timestamp": "2026-01-19T10:54:13.000227",
+        "sent_time": "2026-01-19T10:54:13.000227",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16492,
+          46.661528
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 345,
+        "timestamp": "2026-01-19T10:58:34.976570",
+        "sent_time": "2026-01-19T10:58:34.976570",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164887,
+          46.662192
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 346,
+        "timestamp": "2026-01-19T10:59:19.961227",
+        "sent_time": "2026-01-19T10:59:19.961227",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164887,
+          46.6626
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 347,
+        "timestamp": "2026-01-19T10:59:57.778346",
+        "sent_time": "2026-01-19T10:59:57.778346",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.165222,
+          46.663543
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 348,
+        "timestamp": "2026-01-19T11:01:00.514941",
+        "sent_time": "2026-01-19T11:01:00.514941",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16619,
+          46.663878
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 349,
+        "timestamp": "2026-01-19T11:02:03.271403",
+        "sent_time": "2026-01-19T11:02:03.271403",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164997,
+          46.663518
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 350,
+        "timestamp": "2026-01-19T11:03:06.015433",
+        "sent_time": "2026-01-19T11:03:06.015433",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16484,
+          46.663047
+        ]
+      },
+      "properties": {
+        "type": "failed_transmission",
+        "frame_count": 351,
+        "timestamp": "2026-01-19T11:04:08.757965",
+        "sent_time": "2026-01-19T11:04:08.757965",
+        "has_valid_gps": true,
+        "marker-color": "#808080"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1646583,
+            46.662285
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 330,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -69.0,
+        "snr": 13.5,
+        "distance": 27.449874,
+        "timestamp": "2026-01-19T09:41:36.095085Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1642783,
+            46.6623633
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 331,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -77.0,
+        "snr": 9.5,
+        "distance": 25.730987,
+        "timestamp": "2026-01-19T09:42:38.847946Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1635666,
+            46.6619199
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 332,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -98.0,
+        "snr": 12.75,
+        "distance": 30.845234,
+        "timestamp": "2026-01-19T09:45:17.837572Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1634466,
+            46.6605283
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 334,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -114.0,
+        "snr": 2.5,
+        "distance": 40.234567,
+        "timestamp": "2026-01-19T09:45:25.707934Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1635033,
+            46.6613049
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 333,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -107.0,
+        "snr": 7.75,
+        "distance": 356.7665103232869,
+        "timestamp": "2026-01-19T09:45:59.188546Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1633983,
+            46.6600833
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 335,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -117.0,
+        "snr": -0.25,
+        "distance": 490.0511188858487,
+        "timestamp": "2026-01-19T09:47:42.039117Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1648116,
+            46.6592716
+          ],
+          [
+            16.15955,
+            46.6574
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 338,
+        "gateway_id": "24e124fffefb0d85",
+        "rssi": -101.0,
+        "snr": 2.2,
+        "distance": 452.2814383785062,
+        "timestamp": "2026-01-19T09:48:00.928Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.165295,
+            46.6587583
+          ],
+          [
+            16.15956,
+            46.65747
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 339,
+        "gateway_id": "24e124fffefb0d85",
+        "rssi": -104.0,
+        "snr": -7.8,
+        "distance": 460.5340608731163,
+        "timestamp": "2026-01-19T09:48:59.338Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1663916,
+            46.6591133
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 342,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -125.0,
+        "snr": -6.25,
+        "distance": 54.123456,
+        "timestamp": "2026-01-19T09:52:05.398029Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1669183,
+            46.6583899
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 341,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -117.0,
+        "snr": -3.5,
+        "distance": 748.989846944349,
+        "timestamp": "2026-01-19T09:52:40.491241Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1661083,
+            46.6598233
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 343,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -124.0,
+        "snr": -6.5,
+        "distance": 45.678901,
+        "timestamp": "2026-01-19T09:53:08.151658Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1656466,
+            46.6604983
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 344,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -117.0,
+        "snr": 0.5,
+        "distance": 495.83527062748743,
+        "timestamp": "2026-01-19T09:55:47.148532Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1648866,
+            46.6621916
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 347,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -92.0,
+        "snr": 13.5,
+        "distance": 28.901234,
+        "timestamp": "2026-01-19T09:59:17.904162Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1648866,
+            46.6626
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 348,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -110.0,
+        "snr": 6.5,
+        "distance": 31.234567,
+        "timestamp": "2026-01-19T09:59:55.694921Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.16492,
+            46.6615283
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 346,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -84.0,
+        "snr": 14.0,
+        "distance": 22.567890,
+        "timestamp": "2026-01-19T10:00:09.167116Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1652216,
+            46.6635433
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 349,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -107.0,
+        "snr": 7.5,
+        "distance": 219.88392577353974,
+        "timestamp": "2026-01-19T10:00:58.449298Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1649966,
+            46.6635183
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 351,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -102.0,
+        "snr": 10.0,
+        "distance": 206.2354149770482,
+        "timestamp": "2026-01-19T10:03:03.955893Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1661899,
+            46.6638783
+          ],
+          [
+            16.16267,
+            46.664462
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 350,
+        "gateway_id": "f41e57fffff63358",
+        "rssi": -109.0,
+        "snr": -1.25,
+        "distance": 276.3343656693012,
+        "timestamp": "2026-01-19T10:03:37.453622Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.16484,
+            46.6630466
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 352,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -106.0,
+        "snr": 10.25,
+        "distance": 33.456789,
+        "timestamp": "2026-01-19T10:05:42.965133Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.1649383,
+            46.6626416
+          ],
+          [
+            16.164458,
+            46.662415
+          ]
+        ]
+      },
+      "properties": {
+        "type": "gateway_line",
+        "frame_count": 353,
+        "gateway_id": "f41e57fffff39aa6",
+        "rssi": -101.0,
+        "snr": 11.5,
+        "distance": 30.123456,
+        "timestamp": "2026-01-19T10:06:09.546651Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.164458,
+          46.662415
+        ]
+      },
+      "properties": {
+        "type": "gateway",
+        "gateway_id": "f41e57fffff39aa6",
+        "marker-color": "#0000FF",
+        "marker-symbol": "circle-stroked"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.16267,
+          46.664462
+        ]
+      },
+      "properties": {
+        "type": "gateway",
+        "gateway_id": "f41e57fffff63358",
+        "marker-color": "#0000FF",
+        "marker-symbol": "circle-stroked"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.15956,
+          46.65747
+        ]
+      },
+      "properties": {
+        "type": "gateway",
+        "gateway_id": "24e124fffefb0d85",
+        "marker-color": "#0000FF",
+        "marker-symbol": "circle-stroked"
+      }
+    }
+  ]
+}

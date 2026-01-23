@@ -53,8 +53,13 @@ uint8_t sessionBuffer[RADIOLIB_LORAWAN_SESSION_BUF_SIZE];
 uint32_t nextUplinkTime = 0;
 uint32_t lastButtonCheck = 0;
 
-// Manual uplink trigger
+// Manual uplink trigger (from watch button)
 volatile bool manualUplinkRequested = false;
+
+// Phone uplink trigger (from BLE command)
+volatile bool phoneUplinkRequested = false;
+uint32_t lastPhoneUplinkTime = 0;
+const uint32_t PHONE_UPLINK_MIN_INTERVAL_MS = 5000;  // 5 second debounce
 
 // Sleep mode trigger (set by power button callback)
 volatile bool sleepRequested = false;
@@ -695,15 +700,47 @@ void doSendUplink() {
 }
 
 void sendUplink() {
-    // Check for manual uplink request
+    // Check for manual uplink request (from watch button)
     if (manualUplinkRequested) {
         manualUplinkRequested = false;
-        Serial.println(F("[Uplink] Manual uplink requested"));
+        Serial.println(F("[Uplink] Manual uplink requested (watch button)"));
 
         if (canSendUplink()) {
             doSendUplink();
         } else {
             updateDisplay("WAIT", "Duty cycle limit\nTry again later");
+            delay(2000);
+            updateDisplay("ACTIVE", nullptr);
+        }
+        return;
+    }
+
+    // Check for phone uplink request (from BLE command)
+    if (phoneUplinkRequested) {
+        phoneUplinkRequested = false;
+
+        // Debounce: Check if enough time has passed since last phone-triggered uplink
+        uint32_t now = millis();
+        if (now - lastPhoneUplinkTime < PHONE_UPLINK_MIN_INTERVAL_MS) {
+            Serial.println(F("[Uplink] Phone request ignored - debounce"));
+            // Notify phone about rate limit
+            if (ENABLE_BLE_GPS && isBleConnected()) {
+                bleSend("ERR,RATE_LIMIT\n");
+            }
+            return;
+        }
+
+        Serial.println(F("[Uplink] Phone uplink requested (BLE command)"));
+        lastPhoneUplinkTime = now;
+
+        if (canSendUplink()) {
+            doSendUplink();
+        } else {
+            updateDisplay("WAIT", "Duty cycle limit\nTry again later");
+            // Notify phone about duty cycle limit
+            if (ENABLE_BLE_GPS && isBleConnected()) {
+                bleSend("ERR,DUTY_CYCLE\n");
+            }
             delay(2000);
             updateDisplay("ACTIVE", nullptr);
         }
@@ -869,6 +906,15 @@ void setup() {
 void loop() {
     // Process BLE GPS data (Phase 2)
     processBleData();
+
+    // Handle phone uplink request when not in UPLINK state (error case)
+    if (phoneUplinkRequested && currentState != LORAWAN_UPLINK) {
+        phoneUplinkRequested = false;
+        Serial.println(F("[Uplink] Phone request rejected - not joined"));
+        if (ENABLE_BLE_GPS && isBleConnected()) {
+            bleSend("ERR,NOT_JOINED\n");
+        }
+    }
 
     // Update battery indicator
     updateBatteryIndicator();

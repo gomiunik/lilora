@@ -254,6 +254,33 @@ class BluetoothService extends ChangeNotifier {
     }
   }
 
+  /// Send a command to the device
+  /// Commands use the format: CMD,<command>\n
+  Future<bool> sendCommand(String command) async {
+    if (_rxCharacteristic == null) {
+      debugPrint('Cannot send command: not connected');
+      return false;
+    }
+
+    try {
+      final data = utf8.encode('CMD,$command\n');
+      await _rxCharacteristic!.write(data, withoutResponse: false);
+      debugPrint('Sent command: $command');
+      return true;
+    } catch (e) {
+      debugPrint('Command send error: $e');
+      _statusMessage = 'Command error: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Trigger an uplink transmission on the watch
+  /// Returns true if the command was sent successfully
+  Future<bool> triggerUplink() async {
+    return sendCommand('TX');
+  }
+
   @override
   void dispose() {
     disconnect();

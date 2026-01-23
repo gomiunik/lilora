@@ -365,12 +365,47 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
+  void _triggerUplink() async {
+    final bleService = context.read<BluetoothService>();
+
+    if (!bleService.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not connected to watch'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final success = await bleService.triggerUplink();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Uplink triggered' : 'Failed to trigger uplink'),
+          backgroundColor: success ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final sessionService = context.watch<SessionService>();
+    final bleService = context.watch<BluetoothService>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Range Map'),
         actions: [
+          // Send Now button (only visible when recording and connected)
+          if (sessionService.isRecording && bleService.isConnected)
+            IconButton(
+              icon: const Icon(Icons.send),
+              onPressed: _triggerUplink,
+              tooltip: 'Send LoRa Now',
+            ),
           // Auto-center toggle
           IconButton(
             icon: Icon(_autoCenter ? Icons.gps_fixed : Icons.gps_not_fixed),
