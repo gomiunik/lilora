@@ -319,11 +319,6 @@ class _MapScreenState extends State<MapScreen> {
 
     if (sessionService.isRecording) {
       await sessionService.stopSession();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recording stopped')),
-        );
-      }
     } else {
       try {
         // Ensure session service is initialized
@@ -339,11 +334,6 @@ class _MapScreenState extends State<MapScreen> {
         });
 
         await sessionService.startSession();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Recording started')),
-          );
-        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
